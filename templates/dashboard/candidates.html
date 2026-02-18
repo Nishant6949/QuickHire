@@ -2,134 +2,124 @@
 
 {% block title %}Candidate Pool{% endblock %}
 {% block breadcrumb %}Candidate Pool{% endblock %}
-{% block topbar_actions %}
-<button class="btn-outline-sm" id="import-btn"><i data-feather="download"></i> Import CSV</button>
-{% endblock %}
 
 {% block page_content %}
-<!-- Stats -->
 <div class="stats-grid">
     <div class="stat-card">
         <span class="stat-icon"><i data-feather="users"></i></span>
         <div class="stat-label">Total Candidates</div>
-        <div class="stat-value">347</div>
-        <div class="stat-change">↑ 42 this month</div>
+        <div class="stat-value">{{ total_count }}</div>
     </div>
     <div class="stat-card green">
         <span class="stat-icon"><i data-feather="user-check"></i></span>
-        <div class="stat-label">Shortlisted</div>
-        <div class="stat-value">38</div>
-        <div class="stat-change">11% of pool</div>
+        <div class="stat-label">Invited</div>
+        <div class="stat-value">{{ invited_count }}</div>
     </div>
     <div class="stat-card amber">
         <span class="stat-icon"><i data-feather="clock"></i></span>
         <div class="stat-label">Pending Review</div>
-        <div class="stat-value">91</div>
-        <div class="stat-change down">26% of pool</div>
+        <div class="stat-value">{{ pending_count }}</div>
     </div>
     <div class="stat-card purple">
         <span class="stat-icon"><i data-feather="check-circle"></i></span>
         <div class="stat-label">Hired</div>
-        <div class="stat-value">14</div>
-        <div class="stat-change">This quarter</div>
+        <div class="stat-value">{{ hired_count }}</div>
     </div>
 </div>
 
-<!-- Search & filter row -->
 <div class="section-heading">
     <h2>All Candidates</h2>
     <div style="display:flex;gap:var(--spacing-sm);align-items:center;flex-wrap:wrap;">
         <div class="search-box">
-            <span class="search-icon"><i data-feather="search" style="width:14px;height:14px;"></i></span>
+            <span class="search-icon"><i data-feather="search" style="width:18px;height:18px;"></i></span>
             <input type="text" placeholder="Search candidates…" id="cand-search">
         </div>
         <select class="settings-input" id="cand-status-filter" style="width:150px;">
             <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="shortlisted">Shortlisted</option>
-            <option value="rejected">Rejected</option>
-            <option value="hired">Hired</option>
+            <option value="scored">Scored</option>
+            <option value="invited">Invited</option>
+            <option value="final_hired">Hired</option>
+            <option value="final_rejected">Rejected</option>
         </select>
-        <select class="settings-input" id="cand-role-filter" style="width:170px;">
-            <option value="all">All Applied Roles</option>
-            <option value="backend">Senior Backend Dev</option>
-            <option value="frontend">Frontend Lead</option>
-            <option value="pm">Product Manager</option>
-            <option value="designer">UI/UX Designer</option>
-            <option value="devops">DevOps Engineer</option>
+        <select class="settings-input" id="cand-job-filter" style="width:200px;">
+            <option value="all">All Jobs</option>
         </select>
     </div>
 </div>
 
-<!-- Candidates Table -->
 <div class="data-table-wrap">
     <table>
-        <thead><tr>
-            <th>Candidate</th>
-            <th>Applied For</th>
-            <th>Skills</th>
-            <th>Match</th>
-            <th>Status</th>
-            <th>Applied</th>
-        </tr></thead>
+        <thead>
+            <tr>
+                <th>Candidate</th>
+                <th>Applied For</th>
+                <th>Top Skills</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
         <tbody id="cand-tbody"></tbody>
     </table>
+</div>
+
+<div class="empty-state" id="cand-empty" style="display:none;">
+    <i data-feather="users"
+        style="width:48px;height:48px;color:var(--color-text-disabled);margin-bottom:var(--spacing-md);"></i>
+    <p style="color:var(--color-text-disabled);font-size:var(--font-size-sm);">No candidates found. Run a screening from
+        the Dashboard to see results here.</p>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- Candidate Detail Drawer -->
-<div id="cand-drawer" class="drawer">
-    <div class="drawer-backdrop" id="cand-drawer-backdrop"></div>
-    <div class="drawer-content">
-        <div class="drawer-header">
-            <h2 class="drawer-title" id="cd-name">—</h2>
-            <button class="drawer-close" id="cd-close"><i data-feather="x"></i></button>
+<div class="modal-overlay" id="contact-modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Contact Candidate</h3>
+            <button class="modal-close" id="contact-modal-close" type="button" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
         </div>
-        <div class="drawer-body">
-            <section class="drawer-section">
-                <div style="display:flex;align-items:center;gap:var(--spacing-lg);">
-                    <div class="avatar-sm" id="cd-avatar" style="width:56px;height:56px;font-size:18px;">SC</div>
-                    <div>
-                        <h3 style="color:var(--color-text-high);font-size:var(--font-size-lg);margin-bottom:2px;" id="cd-name2">—</h3>
-                        <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);" id="cd-email">—</p>
-                    </div>
-                </div>
-            </section>
-            <section class="drawer-section">
-                <h3 class="section-header">Match Score</h3>
-                <div class="match-score-display">
-                    <div class="score-ring-large">
-                        <svg width="120" height="120">
-                            <circle cx="60" cy="60" r="54" fill="none" stroke="#1F2833" stroke-width="8"/>
-                            <circle id="cd-score-circle" cx="60" cy="60" r="54" fill="none" stroke="#2ECC71" stroke-width="8" stroke-dasharray="339.292" stroke-dashoffset="0" transform="rotate(-90 60 60)" stroke-linecap="round"/>
-                        </svg>
-                        <span class="score-text" id="cd-score-text">—</span>
-                    </div>
-                    <div>
-                        <p style="font-size:var(--font-size-sm);color:var(--color-text-low);margin-bottom:var(--spacing-sm);" id="cd-applied-for">—</p>
-                        <ul class="ai-summary" id="cd-summary"></ul>
-                    </div>
-                </div>
-            </section>
-            <section class="drawer-section">
-                <h3 class="section-header">Skills</h3>
-                <div id="cd-skills"></div>
-            </section>
-            <section class="drawer-section">
-                <h3 class="section-header">Resume Preview</h3>
-                <div class="resume-preview"><div class="resume-placeholder"><i data-feather="file-text"></i><p>Resume preview — demo mode</p></div></div>
-            </section>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="contact-to">To</label>
+                <input type="email" id="contact-to" readonly>
+            </div>
+            <div class="form-group">
+                <label for="contact-subject">Subject</label>
+                <input type="text" id="contact-subject" placeholder="Enter email subject…">
+            </div>
+            <div class="form-group">
+                <label for="contact-body">Message</label>
+                <textarea id="contact-body" rows="6" placeholder="Write your message…"></textarea>
+            </div>
+            <input type="hidden" id="contact-candidate-id">
         </div>
-        <div class="drawer-footer">
-            <button class="btn-danger" id="cd-reject"><i data-feather="x-circle"></i> Reject</button>
-            <button class="btn-neutral" id="cd-shortlist"><i data-feather="star"></i> Shortlist</button>
-            <button class="btn-primary" id="cd-schedule"><i data-feather="calendar"></i> Schedule</button>
+        <div class="modal-footer">
+            <button class="btn-outline" id="contact-cancel-btn" type="button">Cancel</button>
+            <button class="btn-primary" id="contact-send-btn" type="button">
+                <i data-feather="send"></i> Send Email
+            </button>
         </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="detail-modal" style="display:none;">
+    <div class="modal-content modal-content--wide" style="height:auto;max-height:85vh;">
+        <div class="modal-header">
+            <h3 id="detail-modal-name">Candidate Details</h3>
+            <button class="modal-close" id="detail-modal-close" type="button" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="detail-modal-body"></div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script>
+    window.__candidates = {{ candidates_data | tojson }};
+</script>
 <script src="{{ url_for('static', filename='js/candidates.js') }}"></script>
 {% endblock %}

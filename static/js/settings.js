@@ -1,6 +1,4 @@
-// Animation / UI only — settings save and danger actions handled by Python
 document.addEventListener('DOMContentLoaded', () => {
-    if (window.feather) feather.replace();
     setupTabs();
 });
 

@@ -16,71 +16,92 @@
 <!-- KPI Stats -->
 <div class="stats-grid">
     <div class="stat-card">
-        <span class="stat-icon"><i data-feather="bar-chart-2"></i></span>
-        <div class="stat-label">Applications</div>
-        <div class="stat-value">214</div>
-        <div class="stat-change">↑ 18% vs prev period</div>
+        <span class="stat-icon"><i data-feather="users"></i></span>
+        <div class="stat-label">Total Candidates</div>
+        <div class="stat-value" id="kpi-total">—</div>
+        <div class="stat-change" id="kpi-total-sub">in selected period</div>
     </div>
     <div class="stat-card green">
-        <span class="stat-icon"><i data-feather="check-circle"></i></span>
-        <div class="stat-label">Conversion Rate</div>
-        <div class="stat-value">12.4%</div>
-        <div class="stat-change">↑ 2.1% improvement</div>
+        <span class="stat-icon"><i data-feather="bar-chart-2"></i></span>
+        <div class="stat-label">Avg Match Score</div>
+        <div class="stat-value" id="kpi-avg-score">—</div>
+        <div class="stat-change" id="kpi-avg-sub">across scored candidates</div>
     </div>
     <div class="stat-card amber">
-        <span class="stat-icon"><i data-feather="clock"></i></span>
-        <div class="stat-label">Avg Time to Hire</div>
-        <div class="stat-value">18 days</div>
-        <div class="stat-change down">↓ 3 days faster</div>
+        <span class="stat-icon"><i data-feather="check-circle"></i></span>
+        <div class="stat-label">Shortlisted</div>
+        <div class="stat-value" id="kpi-shortlisted">—</div>
+        <div class="stat-change" id="kpi-shortlisted-sub">invited or above</div>
     </div>
     <div class="stat-card purple">
-        <span class="stat-icon"><i data-feather="dollar-sign"></i></span>
-        <div class="stat-label">Cost per Hire</div>
-        <div class="stat-value">$2,340</div>
-        <div class="stat-change">↓ $180 saved</div>
+        <span class="stat-icon"><i data-feather="award"></i></span>
+        <div class="stat-label">Hired</div>
+        <div class="stat-value" id="kpi-hired">—</div>
+        <div class="stat-change" id="kpi-hired-sub">final_hired status</div>
     </div>
 </div>
 
 <div class="two-col">
     <!-- Applications over time (bar chart) -->
     <div class="card-panel">
-        <h3>Applications Over Time</h3>
-        <div class="bar-chart" id="app-chart"></div>
+        <h3>Candidates Over Time</h3>
+        <div id="app-chart" class="analytics-bar-chart-wrap">
+            <div class="analytics-empty" id="app-chart-empty" style="display:none;">No candidate data in this period.
+            </div>
+        </div>
     </div>
 
     <!-- Candidates by department (horizontal bars) -->
     <div class="card-panel">
-        <h3>Applications by Department</h3>
-        <div id="dept-breakdown"></div>
+        <h3>Candidates by Department</h3>
+        <div id="dept-breakdown">
+            <div class="analytics-empty" id="dept-empty" style="display:none;">No department data available.</div>
+        </div>
     </div>
 </div>
 
 <div class="two-col">
     <!-- Funnel / Pipeline -->
     <div class="card-panel">
-        <h3>Hiring Funnel</h3>
-        <div id="funnel-chart"></div>
+        <h3>Hiring Funnel <span style="font-size:0.75em;color:var(--color-text-disabled);font-weight:400;">(all
+                time)</span></h3>
+        <div id="funnel-chart">
+            <div class="analytics-empty" id="funnel-empty" style="display:none;">No pipeline data yet.</div>
+        </div>
     </div>
 
     <!-- Top skills in demand -->
     <div class="card-panel">
         <h3>Top Skills in Demand</h3>
-        <div id="skills-demand"></div>
+        <div id="skills-demand" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;">
+            <div class="analytics-empty" id="skills-empty" style="display:none;">No skill data available.</div>
+        </div>
     </div>
 </div>
 
 <!-- Recent hires table -->
-<div class="section-heading" style="margin-top:var(--spacing-xl);"><h2>Recent Hires</h2></div>
+<div class="section-heading" style="margin-top:var(--spacing-xl);">
+    <h2>Recent Hires</h2>
+</div>
 <div class="data-table-wrap">
     <table>
-        <thead><tr>
-            <th>Candidate</th><th>Role</th><th>Department</th><th>Match Score</th><th>Time to Hire</th><th>Hired On</th>
-        </tr></thead>
-        <tbody id="hires-tbody"></tbody>
+        <thead>
+            <tr>
+                <th>Candidate</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Match Score</th>
+                <th>Added On</th>
+            </tr>
+        </thead>
+        <tbody id="hires-tbody">
+            <tr id="hires-empty-row">
+                <td colspan="5" style="text-align:center;color:var(--color-text-disabled);padding:2rem;">No hired
+                    candidates yet.</td>
+            </tr>
+        </tbody>
     </table>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+<script src="/static/js/analytics.js"></script>
 {% endblock %}

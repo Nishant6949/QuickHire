@@ -11,13 +11,13 @@
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
-    <a href="{{ url_for('index') }}" class="auth-brand">QuickHire</a>
+    <a href="{{ url_for('landing.index') }}" class="auth-brand">QuickHire</a>
 
     <div class="auth-container">
         <div class="auth-card">
             <div id="login-form" class="auth-form active">
                 <h2 class="auth-header">Welcome Back</h2>
-                <form id="login-form-element" method = "POST" action = "{{ url_for('login')}}">
+                <form id="login-form-element" method = "POST" action = "{{ url_for('auth.login')}}">
                     <div class="form-group">
                         <label for="login-email">Work Email</label>
                         <input type="email" name = "login-email" id="login-email" placeholder="you@company.com" required>
@@ -36,11 +36,11 @@
                         <span id="login-text">Sign In</span>
                         <span id="login-spinner" class="spinner" style="display: none;"></span>
                     </button>
-                    <p class="auth-switch">Don't have an account? <a href="{{ url_for('register') }}" id="switch-to-register">Sign Up</a></p>
+                    <p class="auth-switch">Don't have an account? <a href="{{ url_for('auth.register') }}" id="switch-to-register">Sign Up</a></p>
                 </form>
             </div> 
 
-            <a href="{{ url_for('index') }}" class="back-btn">
+            <a href="{{ url_for('landing.index') }}" class="back-btn">
                 <i data-feather="arrow-left"></i> Back to Home
             </a>
         </div>

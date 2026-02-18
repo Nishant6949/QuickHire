@@ -1,4 +1,3 @@
-// Animation only — show/hide toast (Python can call window.toast for feedback)
 (function () {
     window.toast = function (msg, type) {
         type = type || 'success';

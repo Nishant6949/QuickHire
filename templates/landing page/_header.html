@@ -10,13 +10,13 @@
             <a href="#team" class="nav-link">Team</a>
         </div>
         <div class="nav-center">
-            <a href="{{ url_for('index') }}" class="nav-logo">
+            <a href="{{ url_for('landing.index') }}" class="nav-logo">
                 <span class="logo-text">QuickHire</span>
             </a>
         </div>
         <div class="nav-right">
-            <a href="{{ url_for('login') }}" class="nav-link">Sign In</a>
-            <a href="{{ url_for('register') }}" class="btn-primary-nav">Get Started</a>
+            <a href="{{ url_for('auth.login') }}" class="nav-link">Sign In</a>
+            <a href="{{ url_for('auth.register') }}" class="btn-primary-nav">Get Started</a>
         </div>
     </div>
 </nav>

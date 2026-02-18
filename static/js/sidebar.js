@@ -1,4 +1,3 @@
-// Mobile menu toggle, profile dropdown, and feather icons for sidebar
 (function () {
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
@@ -8,7 +7,6 @@
         });
     }
 
-    // Profile dropdown (topbar)
     const profileTrigger = document.getElementById('profile-dropdown-trigger');
     const profileDropdown = document.getElementById('profile-dropdown');
     const profileWrap = profileTrigger && profileDropdown ? profileTrigger.closest('.profile-dropdown-wrap') : null;

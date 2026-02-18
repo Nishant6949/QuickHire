@@ -11,14 +11,14 @@
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
-    <a href="{{ url_for('index') }}" class="auth-brand">QuickHire</a>
+    <a href="{{ url_for('landing.index') }}" class="auth-brand">QuickHire</a>
 
     <div class="auth-container">
         <div class="auth-card register-card">
             <div class="auth-form active">
                 <h2 class="auth-header">Get Started</h2>
                 <p class="auth-subheader">Join companies hiring smarter with AI</p>
-                <form id="register-form-element" action = "{{ url_for('register')}}" method="POST">
+                <form id="register-form-element" action = "{{ url_for('auth.register')}}" method="POST">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="first-name">First Name</label>
@@ -101,10 +101,10 @@
                         <span id="register-text">Create Free Account</span>
                         <span id="register-spinner" class="spinner" style="display: none;"></span>
                     </button>
-                    <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign In</a></p>
+                    <p class="auth-switch">Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a></p>
                 </form>
             </div>
-            <a href="{{ url_for('index') }}" class="back-btn">
+            <a href="{{ url_for('landing.index') }}" class="back-btn">
                 <i data-feather="arrow-left"></i> Back to Home
             </a>
         </div>

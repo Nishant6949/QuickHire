@@ -1,4 +1,3 @@
-// Animation / UI only — carousel, smooth scroll, mobile nav
 document.addEventListener('DOMContentLoaded', () => {
     if (window.feather) feather.replace();
     setupFeaturesCarousel();
@@ -66,22 +65,17 @@ function setupFeaturesCarousel() {
     const section = document.querySelector('.features-section');
     const track = document.querySelector('.features-track');
     const wrap = document.querySelector('.features-carousel');
-    const dotsEl = document.querySelector('.features-dots');
-    const prevBtn = document.querySelector('.features-prev');
-    const nextBtn = document.querySelector('.features-next');
     if (!section || !track || !wrap) return;
 
     const cards = track.querySelectorAll('.feature-card');
     const count = cards.length;
     if (count === 0) return;
 
-    const hasControls = dotsEl && prevBtn && nextBtn;
     const mobileQuery = window.matchMedia('(max-width: 768px)');
     function isMobile() {
         return mobileQuery.matches;
     }
 
-    let dotButtons = [];
     let currentIndex = 0;
     let cachedMaxIndex = 0;
     let sectionInView = false;
@@ -116,22 +110,6 @@ function setupFeaturesCarousel() {
         return maxScroll <= 0 ? 0 : Math.min(count - 1, Math.round(maxScroll / step));
     }
 
-    function buildDots() {
-        if (!hasControls) return;
-        cachedMaxIndex = getMaxIndex();
-        dotsEl.innerHTML = '';
-        dotButtons = [];
-        for (let i = 0; i <= cachedMaxIndex; i++) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'features-dot' + (i === currentIndex ? ' active' : '');
-            btn.setAttribute('aria-label', `Go to slide ${i + 1}`);
-            btn.addEventListener('click', () => goToSlide(i));
-            dotsEl.appendChild(btn);
-            dotButtons.push(btn);
-        }
-    }
-
     function goToSlide(index, animate = true) {
         currentIndex = Math.max(0, Math.min(index, cachedMaxIndex));
 
@@ -146,20 +124,10 @@ function setupFeaturesCarousel() {
         }
 
         updateActiveCard();
-        if (hasControls) {
-            dotButtons.forEach((dot, i) => dot.classList.toggle('active', i === currentIndex));
-            prevBtn.disabled = currentIndex === 0;
-            nextBtn.disabled = currentIndex >= cachedMaxIndex;
-        }
     }
 
     function updateActiveCard() {
         cards.forEach((card, i) => card.classList.toggle('active', sectionInView && i === currentIndex));
-    }
-
-    if (hasControls) {
-        prevBtn.addEventListener('click', () => goToSlide(currentIndex - 1));
-        nextBtn.addEventListener('click', () => goToSlide(currentIndex + 1));
     }
 
     let wheelCooldown = false;
@@ -200,7 +168,6 @@ function setupFeaturesCarousel() {
             });
             if (best !== currentIndex) {
                 currentIndex = best;
-                if (hasControls) dotButtons.forEach((dot, i) => dot.classList.toggle('active', i === currentIndex));
                 updateActiveCard();
             }
         });
@@ -246,14 +213,12 @@ function setupFeaturesCarousel() {
 
     function init() {
         requestAnimationFrame(() => {
-            if (hasControls) buildDots();
             cachedMaxIndex = getMaxIndex();
             goToSlide(0, false);
         });
     }
     init();
     window.addEventListener('resize', () => {
-        if (hasControls) buildDots();
         cachedMaxIndex = getMaxIndex();
         goToSlide(Math.min(currentIndex, cachedMaxIndex), false);
     });

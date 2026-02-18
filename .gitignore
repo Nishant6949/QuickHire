@@ -5,3 +5,4 @@ Procfile
 markdown_files/dashboard_plan.md
 CLAUDE.md
 .claude/
+uploads/

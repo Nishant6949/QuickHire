@@ -27,10 +27,10 @@
                         <i data-feather="user"></i>
                     </button>
                     <div class="profile-dropdown" id="profile-dropdown" role="menu" aria-hidden="true">
-                        <a href="{{ url_for('dashboard') }}" class="profile-dropdown-item" role="menuitem"><i data-feather="home"></i> Dashboard</a>
-                        <a href="{{ url_for('settings') }}" class="profile-dropdown-item" role="menuitem"><i data-feather="settings"></i> Settings</a>
+                        <a href="{{ url_for('dashboard_bp.dashboard') }}" class="profile-dropdown-item" role="menuitem"><i data-feather="home"></i> Dashboard</a>
+                        <a href="{{ url_for('dashboard_bp.settings') }}" class="profile-dropdown-item" role="menuitem"><i data-feather="settings"></i> Settings</a>
                         <hr class="profile-dropdown-divider">
-                        <a href="{{ url_for('logout') }}" class="profile-dropdown-item profile-dropdown-logout" role="menuitem"><i data-feather="log-out"></i> Logout</a>
+                        <a href="{{ url_for('auth.logout') }}" class="profile-dropdown-item profile-dropdown-logout" role="menuitem"><i data-feather="log-out"></i> Logout</a>
                     </div>
                 </div>
             </div>

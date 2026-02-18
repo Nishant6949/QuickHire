@@ -1,8 +1,6 @@
-// Animation / UI only — form validation and submit handled by Python
 document.addEventListener('DOMContentLoaded', () => {
     if (window.feather) feather.replace();
 
-    // Password visibility toggles
     function setupPasswordToggle(wrapperId, inputId, toggleId) {
         const wrapper = document.getElementById(wrapperId);
         const input = document.getElementById(inputId);

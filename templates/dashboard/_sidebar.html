@@ -1,28 +1,28 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <a href="{{ url_for('dashboard') }}" style="display:flex;align-items:center;gap:var(--spacing-md);text-decoration:none;">
+        <a href="{{ url_for('dashboard_bp.dashboard') }}" style="display:flex;align-items:center;gap:var(--spacing-md);text-decoration:none;">
             <span class="sidebar-logo">QH</span>
             <span class="sidebar-logo-text">QuickHire</span>
         </a>
     </div>
     <nav class="sidebar-nav">
-        <a href="{{ url_for('dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}" data-nav="dashboard">
+        <a href="{{ url_for('dashboard_bp.dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}" data-nav="dashboard">
             <i data-feather="home"></i>
             <span>Dashboard</span>
         </a>
-        <a href="{{ url_for('jobs') }}" class="nav-item {% if active_page == 'jobs' %}active{% endif %}" data-nav="jobs">
+        <a href="{{ url_for('dashboard_bp.jobs') }}" class="nav-item {% if active_page == 'jobs' %}active{% endif %}" data-nav="jobs">
             <i data-feather="briefcase"></i>
             <span>Job Postings</span>
         </a>
-        <a href="{{ url_for('candidates') }}" class="nav-item {% if active_page == 'candidates' %}active{% endif %}" data-nav="candidates">
+        <a href="{{ url_for('dashboard_bp.candidates') }}" class="nav-item {% if active_page == 'candidates' %}active{% endif %}" data-nav="candidates">
             <i data-feather="users"></i>
             <span>Candidate Pool</span>
         </a>
-        <a href="{{ url_for('analytics') }}" class="nav-item {% if active_page == 'analytics' %}active{% endif %}" data-nav="analytics">
+        <a href="{{ url_for('dashboard_bp.analytics') }}" class="nav-item {% if active_page == 'analytics' %}active{% endif %}" data-nav="analytics">
             <i data-feather="bar-chart-2"></i>
             <span>Analytics</span>
         </a>
-        <a href="{{ url_for('settings') }}" class="nav-item {% if active_page == 'settings' %}active{% endif %}" data-nav="settings">
+        <a href="{{ url_for('dashboard_bp.settings') }}" class="nav-item {% if active_page == 'settings' %}active{% endif %}" data-nav="settings">
             <i data-feather="settings"></i>
             <span>Settings</span>
         </a>
