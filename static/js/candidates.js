@@ -4,18 +4,17 @@
 
     function init() {
         cacheElements();
-        populateJobFilter();
         bindFilters();
         bindTableClicks();
         bindContactModal();
         bindDetailModal();
-        renderTable(candidates);
         if (window.feather) feather.replace();
     }
 
     function cacheElements() {
         els.tbody = document.getElementById("cand-tbody");
         els.empty = document.getElementById("cand-empty");
+        els.tableWrap = els.tbody ? els.tbody.closest(".data-table-wrap") : null;
         els.search = document.getElementById("cand-search");
         els.statusFilter = document.getElementById("cand-status-filter");
         els.jobFilter = document.getElementById("cand-job-filter");
@@ -33,108 +32,40 @@
         els.detailBody = document.getElementById("detail-modal-body");
     }
 
-    function populateJobFilter() {
-        var jobs = {};
-        candidates.forEach(function (c) {
-            if (c.job_id && c.job_title) jobs[c.job_id] = c.job_title;
-        });
-        Object.keys(jobs).forEach(function (id) {
-            var opt = document.createElement("option");
-            opt.value = id;
-            opt.textContent = jobs[id];
-            els.jobFilter.appendChild(opt);
-        });
-    }
-
     function bindFilters() {
-        els.search.addEventListener("input", applyFilters);
-        els.statusFilter.addEventListener("change", applyFilters);
-        els.jobFilter.addEventListener("change", applyFilters);
+        if (els.search) els.search.addEventListener("input", applyFilters);
+        if (els.statusFilter) els.statusFilter.addEventListener("change", applyFilters);
+        if (els.jobFilter) els.jobFilter.addEventListener("change", applyFilters);
     }
 
     function applyFilters() {
-        var query = els.search.value.toLowerCase().trim();
-        var status = els.statusFilter.value;
-        var jobId = els.jobFilter.value;
+        var query = (els.search ? els.search.value : "").toLowerCase().trim();
+        var status = els.statusFilter ? els.statusFilter.value : "all";
+        var jobId = els.jobFilter ? els.jobFilter.value : "all";
 
-        var filtered = candidates.filter(function (c) {
-            if (query && (c.candidate_name || "").toLowerCase().indexOf(query) === -1 &&
-                (c.candidate_email || "").toLowerCase().indexOf(query) === -1) return false;
-            if (status !== "all" && c.status !== status) return false;
-            if (jobId !== "all" && String(c.job_id) !== jobId) return false;
-            return true;
-        });
+        var rows = els.tbody.querySelectorAll("tr[data-id]");
+        var visibleCount = 0;
 
-        renderTable(filtered);
-    }
-
-    function renderTable(rows) {
-        els.tbody.innerHTML = "";
-
-        if (rows.length === 0) {
-            els.empty.style.display = "";
-            els.tbody.closest(".data-table-wrap").style.display = "none";
-            if (window.feather) feather.replace();
-            return;
-        }
-
-        els.empty.style.display = "none";
-        els.tbody.closest(".data-table-wrap").style.display = "";
-
-        rows.forEach(function (c) {
-            var tr = document.createElement("tr");
-            tr.dataset.id = c.id;
-            tr.style.cursor = "pointer";
-
-            var skillPills = (c.matched_skills || []).slice(0, 3).map(function (s) {
-                return '<span class="pill-tag">' + escapeHtml(s) + '</span>';
-            }).join("");
-            if ((c.matched_skills || []).length > 3) {
-                skillPills += '<span class="pill-tag" style="opacity:0.6;">+' + (c.matched_skills.length - 3) + '</span>';
+        rows.forEach(function (row) {
+            var show = true;
+            if (query) {
+                var name = (row.dataset.name || "").toLowerCase();
+                var email = (row.dataset.email || "").toLowerCase();
+                if (name.indexOf(query) === -1 && email.indexOf(query) === -1) show = false;
             }
+            if (show && status !== "all" && row.dataset.status !== status) show = false;
+            if (show && jobId !== "all" && row.dataset.jobId !== jobId) show = false;
 
-            var scoreClass = c.match_score >= 90 ? "green" : c.match_score >= 70 ? "amber" : "red";
-            var statusBadge = buildStatusBadge(c.status);
-            var hasEmail = c.candidate_email && c.candidate_email.length > 0;
-
-            tr.innerHTML =
-                '<td>' +
-                '<div style="display:flex;flex-direction:column;">' +
-                '<span style="font-weight:600;color:var(--color-text-high);">' + escapeHtml(c.candidate_name || "Unknown") + '</span>' +
-                '<span style="font-size:var(--font-size-xs);color:var(--color-text-disabled);">' + escapeHtml(c.candidate_email || "") + '</span>' +
-                '</div>' +
-                '</td>' +
-                '<td>' + escapeHtml(c.job_title || "Unknown") + '</td>' +
-                '<td>' + skillPills + '</td>' +
-                '<td><div class="result-score ' + scoreClass + '" style="width:40px;height:36px;font-size:var(--font-size-sm);">' + c.match_score + '</div></td>' +
-                '<td>' + statusBadge + '</td>' +
-                '<td style="white-space:nowrap;">' +
-                '<button class="contact-btn card-pdf-btn" data-id="' + c.id + '" type="button"' + (hasEmail ? '' : ' disabled') + '><i data-feather="mail"></i> Contact</button>' +
-                ' <button class="delete-cand-btn" data-id="' + c.id + '" type="button" title="Delete candidate" style="background:transparent;border:1px solid rgba(239,68,68,0.5);color:var(--color-danger);border-radius:6px;padding:6px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-xs);transition:all 0.15s;"><i data-feather="trash-2" style="width:18px;height:18px;"></i></button>' +
-                '</td>';
-
-            els.tbody.appendChild(tr);
+            row.style.display = show ? "" : "none";
+            if (show) visibleCount++;
         });
 
-        if (window.feather) feather.replace();
-    }
-
-    function buildStatusBadge(status) {
-        var map = {
-            "scored": { cls: "badge-ready", label: "Scored" },
-            "pending": { cls: "badge-draft", label: "Pending" },
-            "invited": { cls: "badge-invited", label: "Invited" },
-            "interview_done": { cls: "badge-interview-done", label: "Interview Done" },
-            "shortlisted": { cls: "badge-shortlisted", label: "Shortlisted" },
-            "final_hired": { cls: "badge-final-hired", label: "Hired" },
-            "final_rejected": { cls: "badge-final-rejected", label: "Rejected" },
-            "error": { cls: "badge-draft", label: "Error" }
-        };
-        var info = map[status] || { cls: "badge-draft", label: status || "Unknown" };
-        return '<span class="job-card-badge ' + info.cls + '">' + info.label + '</span>';
+        if (els.tableWrap) els.tableWrap.style.display = visibleCount > 0 ? "" : "none";
+        if (els.empty) els.empty.style.display = visibleCount > 0 ? "none" : "";
     }
 
     function bindTableClicks() {
+        if (!els.tbody) return;
         els.tbody.addEventListener("click", function (e) {
             var deleteBtn = e.target.closest(".delete-cand-btn");
             if (deleteBtn) {
@@ -163,6 +94,8 @@
             .then(function (data) {
                 if (data.success) {
                     candidates = candidates.filter(function (c) { return c.id !== id; });
+                    var row = els.tbody.querySelector('tr[data-id="' + id + '"]');
+                    if (row) row.remove();
                     applyFilters();
                     if (window.toast) window.toast("Candidate removed", "success");
                 } else {
@@ -228,6 +161,7 @@
     }
 
     function bindContactModal() {
+        if (!els.contactModal) return;
         els.contactClose.addEventListener("click", closeContactModal);
         els.contactCancel.addEventListener("click", closeContactModal);
         els.contactSend.addEventListener("click", submitContact);
@@ -297,22 +231,17 @@
     }
 
     function bindDetailModal() {
+        if (!els.detailModal) return;
         els.detailClose.addEventListener("click", closeDetailModal);
         els.detailModal.addEventListener("click", function (e) {
             if (e.target === els.detailModal) closeDetailModal();
         });
         document.addEventListener("keydown", function (e) {
             if (e.key === "Escape") {
-                if (els.contactModal.style.display !== "none") closeContactModal();
-                else if (els.detailModal.style.display !== "none") closeDetailModal();
+                if (els.contactModal && els.contactModal.style.display !== "none") closeContactModal();
+                else if (els.detailModal && els.detailModal.style.display !== "none") closeDetailModal();
             }
         });
-    }
-
-    function escapeHtml(str) {
-        var div = document.createElement("div");
-        div.textContent = str;
-        return div.innerHTML;
     }
 
     document.addEventListener("DOMContentLoaded", init);

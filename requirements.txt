@@ -7,5 +7,3 @@ python-dotenv
 pdfplumber
 anthropic
 fpdf2
-google-api-python-client
-google-auth-oauthlib

@@ -43,11 +43,14 @@
         </select>
         <select class="settings-input" id="cand-job-filter" style="width:200px;">
             <option value="all">All Jobs</option>
+            {% for job_id, job_title in job_filter_options %}
+            <option value="{{ job_id }}">{{ job_title }}</option>
+            {% endfor %}
         </select>
     </div>
 </div>
 
-<div class="data-table-wrap">
+<div class="data-table-wrap" style="{{ 'display:none;' if not candidates_data else '' }}">
     <table>
         <thead>
             <tr>
@@ -59,11 +62,45 @@
                 <th>Action</th>
             </tr>
         </thead>
-        <tbody id="cand-tbody"></tbody>
+        <tbody id="cand-tbody">
+            {% for c in candidates_data %}
+            <tr data-id="{{ c.id }}" data-status="{{ c.status }}" data-job-id="{{ c.job_id }}"
+                data-name="{{ c.candidate_name }}" data-email="{{ c.candidate_email }}"
+                style="cursor:pointer;">
+                <td>
+                    <div style="display:flex;flex-direction:column;">
+                        <span style="font-weight:600;color:var(--color-text-high);">{{ c.candidate_name or "Unknown" }}</span>
+                        <span style="font-size:var(--font-size-xs);color:var(--color-text-disabled);">{{ c.candidate_email or "" }}</span>
+                    </div>
+                </td>
+                <td>{{ c.job_title or "Unknown" }}</td>
+                <td>
+                    {% for s in c.matched_skills[:3] %}
+                    <span class="pill-tag">{{ s }}</span>
+                    {% endfor %}
+                    {% if c.matched_skills|length > 3 %}
+                    <span class="pill-tag" style="opacity:0.6;">+{{ c.matched_skills|length - 3 }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="result-score {{ 'green' if c.match_score >= 90 else ('amber' if c.match_score >= 70 else 'red') }}"
+                        style="width:40px;height:36px;font-size:var(--font-size-sm);">{{ c.match_score }}</div>
+                </td>
+                <td>{{ c.status_html|safe }}</td>
+                <td style="white-space:nowrap;">
+                    <button class="contact-btn card-pdf-btn" data-id="{{ c.id }}" type="button"{{ " disabled" if not c.candidate_email }}><i data-feather="mail"></i> Contact</button>
+                    <button class="delete-cand-btn" data-id="{{ c.id }}" type="button" title="Delete candidate"
+                        style="background:transparent;border:1px solid rgba(239,68,68,0.5);color:var(--color-danger);border-radius:6px;padding:6px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-xs);transition:all 0.15s;">
+                        <i data-feather="trash-2" style="width:18px;height:18px;"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
 </div>
 
-<div class="empty-state" id="cand-empty" style="display:none;">
+<div class="empty-state" id="cand-empty" style="display:{{ 'none' if candidates_data else 'flex' }};">
     <i data-feather="users"
         style="width:48px;height:48px;color:var(--color-text-disabled);margin-bottom:var(--spacing-md);"></i>
     <p style="color:var(--color-text-disabled);font-size:var(--font-size-sm);">No candidates found. Run a screening from

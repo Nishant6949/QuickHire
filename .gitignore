@@ -2,7 +2,11 @@
 .DS_Store
 Procfile
 .vscode/
-markdown_files/dashboard_plan.md
 CLAUDE.md
 .claude/
 uploads/
+__pycache__/
+*.pyc
+*.pyo
+instance/
+markdown_files/

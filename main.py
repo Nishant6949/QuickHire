@@ -5,6 +5,8 @@ from user_model import db, login_manager
 from routes.auth import auth_bp
 from routes.landing import landing_bp
 from routes.dashboard import dashboard_bp
+from routes.api.jobs import jobs_api_bp
+from routes.api.candidates import candidates_api_bp
 
 load_dotenv()
 
@@ -16,10 +18,6 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['ANTHROPIC_API_KEY'] = os.getenv("ANTHROPIC_API_KEY")
 app.config['GMAIL_ADDRESS'] = os.getenv("GMAIL_ADDRESS")
 app.config['GMAIL_APP_PASSWORD'] = os.getenv("GMAIL_APP_PASSWORD")
-app.config['GOOGLE_CLIENT_ID'] = os.getenv("GOOGLE_CLIENT_ID")
-app.config['GOOGLE_CLIENT_SECRET'] = os.getenv("GOOGLE_CLIENT_SECRET")
-app.config['GOOGLE_OAUTH_REDIRECT_URI'] = os.getenv("GOOGLE_OAUTH_REDIRECT_URI", "http://localhost:8080/dashboard/oauth-callback")
-
 db.init_app(app)
 login_manager.init_app(app)
 login_manager.unauthorized_callback = lambda: abort(404)
@@ -43,6 +41,8 @@ for code in ERROR_PAGES:
 app.register_blueprint(landing_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
+app.register_blueprint(jobs_api_bp)
+app.register_blueprint(candidates_api_bp)
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 

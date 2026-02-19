@@ -804,18 +804,11 @@
         els.inviteModal.style.display = "";
 
         if (els.inviteSchedulingLink && !els.inviteSchedulingLink.value) {
-            els.inviteSchedulingLink.value = "https://calendly.com/dahalaatmik/30min";
+            els.inviteSchedulingLink.value = "";
         }
 
         if (!els.inviteMessage.value) {
-            els.inviteMessage.value =
-                "Congratulations – you’ve been selected to move forward in our interview process for this role.\n\n" +
-                "As the next step, please use the scheduling link below to choose an interview time that works best for you. " +
-                "Once you’ve selected a slot, you’ll receive a calendar invite with all the details.\n\n" +
-                "If you have any questions or need to reschedule later, feel free to reply directly to this email.\n\n" +
-                "Best regards,\n" +
-                "Aatmik Dahal\n" +
-                "QuickHire";
+            els.inviteMessage.value = els.inviteMessage.dataset.default || ‘’;
         }
 
         refreshIcons();
@@ -1117,12 +1110,6 @@
             showWizard();
             goToStep(2);
         }
-    }
-
-    function escapeHtml(str) {
-        var div = document.createElement("div");
-        div.textContent = str;
-        return div.innerHTML;
     }
 
     document.addEventListener("DOMContentLoaded", init);
