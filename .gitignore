@@ -10,3 +10,5 @@ __pycache__/
 *.pyo
 instance/
 markdown_files/
+.planning/
+.claude/
