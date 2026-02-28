@@ -20,6 +20,7 @@
         }
 
         loadAnalytics();
+        if (window.setupDashboardReveal) window.setupDashboardReveal();
     }
 
     function loadAnalytics() {

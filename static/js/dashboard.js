@@ -30,6 +30,7 @@
         bindModals();
         restoreDraft();
         refreshIcons();
+        if (window.setupDashboardReveal) window.setupDashboardReveal();
     }
 
     function cacheElements() {
@@ -808,7 +809,7 @@
         }
 
         if (!els.inviteMessage.value) {
-            els.inviteMessage.value = els.inviteMessage.dataset.default || ‘’;
+            els.inviteMessage.value = els.inviteMessage.dataset.default || '';
         }
 
         refreshIcons();

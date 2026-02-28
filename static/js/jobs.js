@@ -654,4 +654,5 @@
             });
         }
     })();
+    if (window.setupDashboardReveal) window.setupDashboardReveal();
 })();

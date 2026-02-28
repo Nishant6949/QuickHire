@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFeaturesCarousel();
     setupSmoothScroll();
     setupMobileNav();
+    setupScrollReveal();
+    setupNavbarScroll();
 });
 
 function setupMobileNav() {
@@ -222,4 +224,72 @@ function setupFeaturesCarousel() {
         cachedMaxIndex = getMaxIndex();
         goToSlide(Math.min(currentIndex, cachedMaxIndex), false);
     });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCROLL REVEAL SYSTEM
+// Uses IntersectionObserver to reveal elements as they scroll into view.
+// Hero section is excluded — it has its own CSS slideUp animation.
+// ─────────────────────────────────────────────────────────────────────────────
+function setupScrollReveal() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var revealConfig = [
+        { selector: '.features-headline', reveal: 'up' },
+        { selector: '.features-description', reveal: 'up', stagger: 1 },
+        { selector: '.features-carousel-wrap', reveal: 'right' },
+        { selector: '.team-label', reveal: 'up' },
+        { selector: '.section-title', reveal: 'up', stagger: 1 },
+        { selector: '.team-card', reveal: 'up', staggerEach: true },
+        { selector: '.footer', reveal: 'up' },
+    ];
+
+    revealConfig.forEach(function (cfg) {
+        var elements = document.querySelectorAll(cfg.selector);
+        elements.forEach(function (el, i) {
+            // Skip elements already visible on load (above fold)
+            var rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight * 0.85) return;
+
+            el.setAttribute('data-reveal', cfg.reveal);
+            if (cfg.stagger) el.setAttribute('data-stagger', cfg.stagger);
+            if (cfg.staggerEach) el.setAttribute('data-stagger', String(i + 1));
+        });
+    });
+
+    var observer = new IntersectionObserver(
+        function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        },
+        { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    document.querySelectorAll('[data-reveal]').forEach(function (el) {
+        observer.observe(el);
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAVBAR SCROLL STATE
+// Adds .is-scrolled class to navbar when page is scrolled, for elevated shadow.
+// ─────────────────────────────────────────────────────────────────────────────
+function setupNavbarScroll() {
+    var navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+
+    var ticking = false;
+    window.addEventListener('scroll', function () {
+        if (!ticking) {
+            requestAnimationFrame(function () {
+                navbar.classList.toggle('is-scrolled', window.scrollY > 20);
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }, { passive: true });
 }

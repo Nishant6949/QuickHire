@@ -9,6 +9,7 @@
         bindContactModal();
         bindDetailModal();
         if (window.feather) feather.replace();
+        if (window.setupDashboardReveal) window.setupDashboardReveal();
     }
 
     function cacheElements() {
