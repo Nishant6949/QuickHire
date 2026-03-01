@@ -155,40 +155,30 @@
         <p>Manage who can access your QuickHire workspace</p>
         <div style="margin-top:var(--spacing-lg);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md);">
-                <span style="font-size:var(--font-size-sm);color:var(--color-text-low);">4 team members</span>
-                <button class="btn-outline-sm"><i data-feather="plus"></i> Invite Member</button>
+                <span style="font-size:var(--font-size-sm);color:var(--color-text-low);">1 member</span>
             </div>
             <div class="data-table-wrap">
                 <table>
                     <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
                     <tbody>
                         <tr>
-                            <td style="display:flex;align-items:center;gap:8px;"><div class="avatar-sm">AU</div>Admin User</td>
-                            <td>admin@acme.com</td>
+                            <td style="display:flex;align-items:center;gap:8px;"><div class="avatar-sm">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>{{ current_user.first_name }} {{ current_user.last_name }}</td>
+                            <td>{{ current_user.work_email }}</td>
                             <td>Owner</td>
                             <td><span class="badge badge-active">Active</span></td>
-                        </tr>
-                        <tr>
-                            <td style="display:flex;align-items:center;gap:8px;"><div class="avatar-sm">JD</div>Jane Doe</td>
-                            <td>jane@acme.com</td>
-                            <td>Admin</td>
-                            <td><span class="badge badge-active">Active</span></td>
-                        </tr>
-                        <tr>
-                            <td style="display:flex;align-items:center;gap:8px;"><div class="avatar-sm">JS</div>John Smith</td>
-                            <td>john@acme.com</td>
-                            <td>Member</td>
-                            <td><span class="badge badge-active">Active</span></td>
-                        </tr>
-                        <tr>
-                            <td style="display:flex;align-items:center;gap:8px;"><div class="avatar-sm">EM</div>Emily Martin</td>
-                            <td>emily@acme.com</td>
-                            <td>Member</td>
-                            <td><span class="badge badge-pending">Invited</span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <div class="settings-section" style="margin-top:var(--spacing-xl);">
+        <h3>Invite Team Members</h3>
+        <p style="color:var(--color-text-low);font-size:var(--font-size-sm);">Team collaboration is coming soon. You'll be able to invite hiring managers, recruiters, and interviewers to your workspace.</p>
+        <div style="margin-top:var(--spacing-lg);padding:var(--spacing-xl);border:1px dashed var(--color-border, rgba(255,255,255,0.1));border-radius:var(--radius-lg);text-align:center;">
+            <i data-feather="users" style="width:32px;height:32px;color:var(--color-text-disabled);margin-bottom:var(--spacing-sm);"></i>
+            <p style="color:var(--color-text-disabled);font-size:var(--font-size-sm);margin:0;">Multi-user access coming in a future update</p>
         </div>
     </div>
 </div>
@@ -197,59 +187,45 @@
 <div class="tab-panel" data-panel="billing">
     <div class="settings-section">
         <h3>Current Plan</h3>
-        <p>You're on the Professional plan</p>
+        <p>Your active subscription</p>
         <div class="card-panel" style="background:linear-gradient(135deg,var(--color-surface),var(--color-elevated));border:1px solid rgba(102,252,241,0.15);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                    <h3 style="font-size:var(--font-size-xl);color:var(--color-text-high);margin-bottom:4px;">Professional</h3>
-                    <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);">$99 / month • Billed monthly</p>
+                    <div style="display:flex;align-items:center;gap:var(--spacing-sm);margin-bottom:4px;">
+                        <h3 style="font-size:var(--font-size-xl);color:var(--color-text-high);margin:0;">Early Access</h3>
+                        <span class="badge badge-active" style="font-size:var(--font-size-xs);">Free</span>
+                    </div>
+                    <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);">Full access while in early access period</p>
                     <ul style="margin-top:var(--spacing-md);font-size:var(--font-size-sm);color:var(--color-text-low);line-height:1.8;">
-                        <li>✓ Unlimited job postings</li>
-                        <li>✓ AI-powered candidate matching</li>
-                        <li>✓ Advanced analytics</li>
-                        <li>✓ Up to 10 team members</li>
+                        <li>&#10003; Unlimited job postings</li>
+                        <li>&#10003; AI-powered candidate screening</li>
+                        <li>&#10003; Analytics dashboard</li>
+                        <li>&#10003; Email invitations & decisions</li>
                     </ul>
                 </div>
-                <button class="btn-outline">Upgrade Plan</button>
             </div>
         </div>
     </div>
 
-    <div class="settings-section">
-        <h3>Payment Method</h3>
-        <p>Manage your payment information</p>
-        <div class="settings-row">
-            <div class="settings-row-left">
-                <h4>Visa •••• 4242</h4>
-                <p>Expires 12/2026</p>
+    <div class="settings-section" style="margin-top:var(--spacing-xl);">
+        <h3>Upcoming Plans</h3>
+        <p style="color:var(--color-text-low);font-size:var(--font-size-sm);">Paid plans with expanded limits and team features will be available when QuickHire launches publicly. Early access users will be notified before any billing begins.</p>
+        <div style="margin-top:var(--spacing-lg);display:flex;gap:var(--spacing-lg);flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;padding:var(--spacing-lg);border:1px solid var(--color-border, rgba(255,255,255,0.1));border-radius:var(--radius-lg);">
+                <h4 style="color:var(--color-text-high);margin-bottom:var(--spacing-xs);">Starter</h4>
+                <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-sm);">For small teams getting started</p>
+                <p style="font-size:var(--font-size-lg);font-weight:700;color:var(--color-text-high);">TBD</p>
             </div>
-            <button class="btn-outline-sm">Update</button>
-        </div>
-    </div>
-
-    <div class="settings-section">
-        <h3>Billing History</h3>
-        <p>Download past invoices and receipts</p>
-        <div class="data-table-wrap">
-            <table>
-                <thead><tr><th>Invoice</th><th>Date</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-                <tbody>
-                    <tr>
-                        <td style="font-weight:600;color:var(--color-text-high);">INV-2026-002</td>
-                        <td>Feb 1, 2026</td>
-                        <td>$99.00</td>
-                        <td><span class="badge badge-active">Paid</span></td>
-                        <td><button class="btn-outline-sm" style="padding:4px 10px;font-size:var(--font-size-xs);"><i data-feather="download"></i></button></td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:600;color:var(--color-text-high);">INV-2026-001</td>
-                        <td>Jan 1, 2026</td>
-                        <td>$99.00</td>
-                        <td><span class="badge badge-active">Paid</span></td>
-                        <td><button class="btn-outline-sm" style="padding:4px 10px;font-size:var(--font-size-xs);"><i data-feather="download"></i></button></td>
-                    </tr>
-                </tbody>
-            </table>
+            <div style="flex:1;min-width:200px;padding:var(--spacing-lg);border:1px solid rgba(102,252,241,0.25);border-radius:var(--radius-lg);">
+                <h4 style="color:var(--color-text-high);margin-bottom:var(--spacing-xs);">Professional</h4>
+                <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-sm);">For growing hiring teams</p>
+                <p style="font-size:var(--font-size-lg);font-weight:700;color:var(--color-text-high);">TBD</p>
+            </div>
+            <div style="flex:1;min-width:200px;padding:var(--spacing-lg);border:1px solid var(--color-border, rgba(255,255,255,0.1));border-radius:var(--radius-lg);">
+                <h4 style="color:var(--color-text-high);margin-bottom:var(--spacing-xs);">Enterprise</h4>
+                <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-sm);">Custom solutions at scale</p>
+                <p style="font-size:var(--font-size-lg);font-weight:700;color:var(--color-text-high);">Contact us</p>
+            </div>
         </div>
     </div>
 </div>
