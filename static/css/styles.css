@@ -78,8 +78,14 @@ body {
         radial-gradient(ellipse 80% 60% at 50% 0%, rgba(20, 24, 28, 0.6) 0%, transparent 50%),
         var(--color-canvas);
     overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+*::-webkit-scrollbar {
+    display: none;
 }
 
 body.nav-overlay-open {
