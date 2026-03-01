@@ -20,12 +20,8 @@ def login():
         result = db.session.execute(db.select(User).where(User.work_email == email))
         user = result.scalar()
 
-        if not user:
-            flash("That email does not exist, please try again.")
-            return redirect(url_for('auth.login'))
-
-        if not check_password_hash(user.password, password):
-            flash('Password incorrect, please try again.')
+        if not user or not check_password_hash(user.password, password):
+            flash("Invalid email or password.")
             return redirect(url_for('auth.login'))
 
         login_user(user)
@@ -53,6 +49,10 @@ def register():
             flash("Passwords do not match. Please try again.")
             return redirect(url_for("auth.register"))
 
+        if len(raw_password) < 8:
+            flash("Password must be at least 8 characters.")
+            return redirect(url_for("auth.register"))
+
         first_name = request.form.get("first-name")
         last_name = request.form.get("last-name")
         company_name = request.form.get("company-name")
@@ -67,7 +67,7 @@ def register():
         hashed_password = generate_password_hash(
             raw_password,
             method='pbkdf2:sha256',
-            salt_length=8
+            salt_length=16
         )
 
         new_user = User(

@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, Text, DateTime, Boolean, ForeignKey
 from flask_login import LoginManager, UserMixin
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 class Base(DeclarativeBase):
@@ -46,6 +46,15 @@ class Job(db.Model):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     user: Mapped["User"] = relationship(back_populates="jobs")
     candidates: Mapped[list["Candidate"]] = relationship(back_populates="job", cascade="all, delete-orphan")
+
+
+class ResetToken(db.Model):
+    __tablename__ = "reset_tokens"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token_hash: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    email: Mapped[str] = mapped_column(String, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class Candidate(db.Model):

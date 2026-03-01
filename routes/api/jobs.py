@@ -1,7 +1,5 @@
 import json
 import logging
-import os
-import shutil
 
 import anthropic
 from flask import Blueprint, request, jsonify, current_app
@@ -13,6 +11,7 @@ from services.ai import (
     call_claude, parse_ai_json, build_jd_analysis_prompt,
     extract_job_title, extract_department, extract_location,
 )
+from services.storage import upload_file, delete_file
 from utils.formatting import (
     extract_pdf_text, format_salary, format_jd_text, render_status_badge,
     serialize_candidate, job_stats_for_user, build_jobs_list,
@@ -35,21 +34,23 @@ def upload_jd():
             return jsonify({"success": False, "error": "Only PDF files are supported"}), 400
 
         jd_filename = secure_filename(file.filename)
-        user_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "jd", str(current_user.id))
-        os.makedirs(user_dir, exist_ok=True)
-        filepath = os.path.join(user_dir, jd_filename)
-        file.save(filepath)
+        file_bytes = file.read()
 
         try:
-            jd_text = extract_pdf_text(filepath)
+            jd_text = extract_pdf_text(file_bytes)
         except Exception as e:
             logger.error("JD PDF extraction failed: %s", e)
-            os.remove(filepath)
             return jsonify({"success": False, "error": "Could not read PDF. It may be image-based or corrupted."}), 400
 
         if not jd_text:
-            os.remove(filepath)
             return jsonify({"success": False, "error": "No text found in PDF. It may be image-based."}), 400
+
+        storage_path = f"jd/{current_user.id}/{jd_filename}"
+        try:
+            upload_file("documents", storage_path, file_bytes)
+        except Exception as e:
+            logger.error("JD upload to storage failed: %s", e)
+            return jsonify({"success": False, "error": "Failed to upload file"}), 500
 
     elif request.form.get("jd_text", "").strip():
         jd_text = request.form["jd_text"].strip()
@@ -239,12 +240,13 @@ def delete_job(job_id):
     if not job or job.user_id != current_user.id:
         return jsonify({"success": False, "error": "Job not found"}), 404
 
-    try:
-        resume_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "resumes", str(job_id))
-        if os.path.isdir(resume_dir):
-            shutil.rmtree(resume_dir)
-    except Exception as e:
-        logger.warning("Could not remove resume directory: %s", e)
+    # Delete JD file from storage if it exists
+    if job.jd_filename:
+        delete_file("documents", f"jd/{current_user.id}/{job.jd_filename}")
+
+    # Delete all candidate resume files from storage
+    for candidate in job.candidates:
+        delete_file("documents", f"resumes/{job_id}/{candidate.resume_filename}")
 
     db.session.delete(job)
     db.session.commit()

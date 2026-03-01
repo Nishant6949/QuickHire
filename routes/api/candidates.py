@@ -1,5 +1,5 @@
+import io
 import logging
-import os
 
 import anthropic
 from flask import Blueprint, request, jsonify, current_app, send_file, Response
@@ -10,6 +10,7 @@ from user_model import db, Job, Candidate
 from services.ai import score_candidate
 from services.email import send_invite_email, send_decision_email, send_custom_email
 from services.pdf import generate_candidate_report, generate_onboarding_doc
+from services.storage import upload_file, download_file, delete_file
 from utils.formatting import (
     extract_pdf_text, serialize_candidate,
     compute_analytics_data, build_analytics_csv,
@@ -32,26 +33,28 @@ def upload_resumes(job_id):
         return jsonify({"success": False, "error": "No files provided"}), 400
 
     results = []
-    resume_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "resumes", str(job_id))
-    os.makedirs(resume_dir, exist_ok=True)
 
     for file in files:
         if not file.filename.lower().endswith(".pdf"):
             continue
 
         filename = secure_filename(file.filename)
-        filepath = os.path.join(resume_dir, filename)
-        file.save(filepath)
+        file_bytes = file.read()
 
         try:
-            resume_text = extract_pdf_text(filepath)
+            resume_text = extract_pdf_text(file_bytes)
         except Exception as e:
             logger.error("Resume PDF extraction failed for %s: %s", filename, e)
-            os.remove(filepath)
             continue
 
         if not resume_text:
-            os.remove(filepath)
+            continue
+
+        storage_path = f"resumes/{job_id}/{filename}"
+        try:
+            upload_file("documents", storage_path, file_bytes)
+        except Exception as e:
+            logger.error("Resume upload to storage failed for %s: %s", filename, e)
             continue
 
         candidate = Candidate(job_id=job.id, resume_text=resume_text, resume_filename=filename)
@@ -76,12 +79,7 @@ def remove_resume(candidate_id):
     if not candidate or candidate.job.user_id != current_user.id:
         return jsonify({"success": False, "error": "Candidate not found"}), 404
 
-    filepath = os.path.join(
-        current_app.config["UPLOAD_FOLDER"], "resumes",
-        str(candidate.job_id), candidate.resume_filename
-    )
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    delete_file("documents", f"resumes/{candidate.job_id}/{candidate.resume_filename}")
 
     db.session.delete(candidate)
     db.session.commit()
@@ -226,15 +224,7 @@ def delete_candidate(candidate_id):
     if not candidate or candidate.job.user_id != current_user.id:
         return jsonify({"success": False, "error": "Candidate not found"}), 404
 
-    try:
-        resume_dir = os.path.join(
-            current_app.config["UPLOAD_FOLDER"], "resumes", str(candidate.job_id)
-        )
-        filepath = os.path.join(resume_dir, candidate.resume_filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)
-    except Exception as e:
-        logger.warning("Could not remove resume file: %s", e)
+    delete_file("documents", f"resumes/{candidate.job_id}/{candidate.resume_filename}")
 
     db.session.delete(candidate)
     db.session.commit()
@@ -258,14 +248,17 @@ def resume_pdf(candidate_id):
     if not candidate or candidate.job.user_id != current_user.id:
         return jsonify({"success": False, "error": "Candidate not found"}), 404
 
-    filepath = os.path.join(
-        current_app.config["UPLOAD_FOLDER"], "resumes",
-        str(candidate.job_id), candidate.resume_filename
-    )
-    if not os.path.exists(filepath):
+    storage_path = f"resumes/{candidate.job_id}/{candidate.resume_filename}"
+    try:
+        file_bytes = download_file("documents", storage_path)
+    except Exception as e:
+        logger.error("Resume download from storage failed: %s", e)
         return jsonify({"success": False, "error": "Resume file not found"}), 404
 
-    return send_file(filepath, mimetype="application/pdf")
+    return send_file(
+        io.BytesIO(file_bytes), mimetype="application/pdf",
+        download_name=candidate.resume_filename
+    )
 
 
 @candidates_api_bp.route("/send-invites", methods=["POST"])
@@ -299,7 +292,8 @@ def send_invites():
                 c.candidate_email, c.candidate_name, job.title,
                 None, None, custom_message,
                 company_name=current_user.company_name,
-                scheduling_link=scheduling_link
+                scheduling_link=scheduling_link,
+                reply_to=current_user.work_email
             )
         email_results.append({
             "id": c.id,
@@ -348,7 +342,8 @@ def final_decision():
             candidate.candidate_name,
             job_title,
             decision,
-            company_name=company_name
+            company_name=company_name,
+            reply_to=current_user.work_email
         )
 
     return jsonify({"success": True, "email_sent": email_sent})
@@ -375,7 +370,8 @@ def send_custom_email_route():
     company_name = current_user.company_name if current_user.company_name else None
     email_sent = send_custom_email(
         candidate.candidate_email, candidate.candidate_name,
-        subject, body, company_name=company_name
+        subject, body, company_name=company_name,
+        reply_to=current_user.work_email
     )
 
     return jsonify({"success": True, "email_sent": email_sent})

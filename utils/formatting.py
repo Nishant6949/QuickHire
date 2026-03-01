@@ -10,9 +10,12 @@ import pdfplumber
 from user_model import db, Job, Candidate
 
 
-def extract_pdf_text(filepath):
+def extract_pdf_text(source):
+    """Extract text from a PDF file path or in-memory bytes."""
+    if isinstance(source, (bytes, bytearray)):
+        source = io.BytesIO(source)
     text = ""
-    with pdfplumber.open(filepath) as pdf:
+    with pdfplumber.open(source) as pdf:
         for page in pdf.pages:
             page_text = page.extract_text()
             if page_text:

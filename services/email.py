@@ -8,10 +8,11 @@ from flask import current_app
 logger = logging.getLogger(__name__)
 
 
-def send_invite_email(to_email, candidate_name, job_title, interview_dt, duration_min, custom_message, company_name=None, scheduling_link=None):
+def send_invite_email(to_email, candidate_name, job_title, interview_dt, duration_min, custom_message, company_name=None, scheduling_link=None, reply_to=None):
     gmail_addr = current_app.config.get("GMAIL_ADDRESS")
     gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
     if not gmail_addr or not gmail_pass:
+        logger.error("Gmail credentials not configured — cannot send invite email")
         return False
 
     time_str = interview_dt.strftime("%B %d, %Y at %I:%M %p") if interview_dt else None
@@ -60,8 +61,10 @@ def send_invite_email(to_email, candidate_name, job_title, interview_dt, duratio
     )
 
     msg = MIMEMultipart("alternative")
-    msg["From"] = gmail_addr
+    msg["From"] = f"{company_name} via QuickHire <{gmail_addr}>" if company_name else f"QuickHire <{gmail_addr}>"
     msg["To"] = to_email
+    if reply_to:
+        msg["Reply-To"] = reply_to
     subject_prefix = f"Interview Invitation from {company_name}" if company_name else "Interview Invitation"
     msg["Subject"] = f"{subject_prefix} - {job_title or 'Position'}"
     msg.attach(MIMEText(html, "html"))
@@ -76,10 +79,11 @@ def send_invite_email(to_email, candidate_name, job_title, interview_dt, duratio
         return False
 
 
-def send_decision_email(to_email, candidate_name, job_title, decision, company_name=None):
+def send_decision_email(to_email, candidate_name, job_title, decision, company_name=None, reply_to=None):
     gmail_addr = current_app.config.get("GMAIL_ADDRESS")
     gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
     if not gmail_addr or not gmail_pass:
+        logger.error("Gmail credentials not configured — cannot send decision email")
         return False
 
     if decision == "hire":
@@ -116,8 +120,10 @@ def send_decision_email(to_email, candidate_name, job_title, decision, company_n
     )
 
     msg = MIMEMultipart("alternative")
-    msg["From"] = gmail_addr
+    msg["From"] = f"{company_name} via QuickHire <{gmail_addr}>" if company_name else f"QuickHire <{gmail_addr}>"
     msg["To"] = to_email
+    if reply_to:
+        msg["Reply-To"] = reply_to
     msg["Subject"] = subject
     msg.attach(MIMEText(html, "html"))
 
@@ -132,10 +138,11 @@ def send_decision_email(to_email, candidate_name, job_title, decision, company_n
         return False
 
 
-def send_custom_email(to_email, candidate_name, subject, body_text, company_name=None):
+def send_custom_email(to_email, candidate_name, subject, body_text, company_name=None, reply_to=None):
     gmail_addr = current_app.config.get("GMAIL_ADDRESS")
     gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
     if not gmail_addr or not gmail_pass:
+        logger.error("Gmail credentials not configured — cannot send custom email")
         return False
 
     html = (
@@ -153,8 +160,10 @@ def send_custom_email(to_email, candidate_name, subject, body_text, company_name
     )
 
     msg = MIMEMultipart("alternative")
-    msg["From"] = gmail_addr
+    msg["From"] = f"{company_name} via QuickHire <{gmail_addr}>" if company_name else f"QuickHire <{gmail_addr}>"
     msg["To"] = to_email
+    if reply_to:
+        msg["Reply-To"] = reply_to
     msg["Subject"] = subject
     msg.attach(MIMEText(html, "html"))
 
