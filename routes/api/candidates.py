@@ -138,8 +138,9 @@ def start_screening(job_id):
     job.status = "completed"
     db.session.commit()
 
+    threshold = current_user.match_threshold if current_user.match_threshold is not None else 70
     sorted_candidates = sorted(candidates, key=lambda c: c.match_score or 0, reverse=True)
-    results = [serialize_candidate(c) for c in sorted_candidates]
+    results = [serialize_candidate(c) for c in sorted_candidates if (c.match_score or 0) >= threshold]
 
     return jsonify({"success": True, "results": results, "rate_limited": rate_limited})
 
@@ -191,9 +192,12 @@ def screen_new_candidates(job_id):
         .order_by(Candidate.match_score.desc())
     ).scalars().all()
 
+    threshold = current_user.match_threshold if current_user.match_threshold is not None else 70
+    filtered = [c for c in all_candidates if (c.match_score or 0) >= threshold]
+
     return jsonify({
         "success": True,
-        "results": [serialize_candidate(c) for c in all_candidates],
+        "results": [serialize_candidate(c) for c in filtered],
         "rate_limited": rate_limited,
         "new_count": len(unscored)
     })

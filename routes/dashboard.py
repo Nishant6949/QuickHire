@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, request, jsonify
+from flask_login import login_required, current_user, logout_user
 
-from user_model import db, Job, Candidate
+from user_model import db, User, Job, Candidate
+from services.storage import delete_file
 from utils.formatting import serialize_candidate, job_stats_for_user, build_jobs_list
 
 dashboard_bp = Blueprint('dashboard_bp', __name__, url_prefix='/dashboard')
@@ -90,3 +91,60 @@ def analytics():
 @login_required
 def settings():
     return render_template("dashboard/settings.html", active_page="settings")
+
+
+@dashboard_bp.route("/settings/save", methods=["POST"])
+@login_required
+def settings_save():
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "error": "No data provided"}), 400
+
+    if "company_name" in data:
+        current_user.company_name = data["company_name"].strip()
+    if "company_size" in data:
+        current_user.company_size = data["company_size"]
+    if "auto_screen" in data:
+        current_user.auto_screen = bool(data["auto_screen"])
+    if "match_threshold" in data:
+        current_user.match_threshold = int(data["match_threshold"])
+    if "bias_detection" in data:
+        current_user.bias_detection = bool(data["bias_detection"])
+
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+def _delete_all_user_data(user):
+    """Delete all jobs, candidates, and storage files for a user."""
+    jobs = db.session.execute(
+        db.select(Job).where(Job.user_id == user.id)
+    ).scalars().all()
+
+    for job in jobs:
+        for candidate in job.candidates:
+            try:
+                delete_file("documents", f"resumes/{job.id}/{candidate.resume_filename}")
+            except Exception:
+                pass
+        db.session.delete(job)
+
+    db.session.commit()
+
+
+@dashboard_bp.route("/settings/delete-data", methods=["POST"])
+@login_required
+def settings_delete_data():
+    _delete_all_user_data(current_user)
+    return jsonify({"success": True})
+
+
+@dashboard_bp.route("/settings/close-account", methods=["POST"])
+@login_required
+def settings_close_account():
+    _delete_all_user_data(current_user)
+    user = db.session.get(User, current_user.id)
+    db.session.delete(user)
+    db.session.commit()
+    logout_user()
+    return jsonify({"success": True, "redirect": "/"})

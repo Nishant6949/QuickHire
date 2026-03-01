@@ -22,6 +22,9 @@ class User(UserMixin, db.Model):
     company_size: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[str] = mapped_column(String, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=False)
+    auto_screen: Mapped[bool] = mapped_column(Boolean, default=True)
+    match_threshold: Mapped[int] = mapped_column(Integer, default=70)
+    bias_detection: Mapped[bool] = mapped_column(Boolean, default=True)
     jobs: Mapped[list["Job"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
