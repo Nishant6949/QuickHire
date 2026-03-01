@@ -1,8 +1,5 @@
 {
-  "framework": null,
-  "builds": [{ "src": "api/index.py", "use": "@vercel/python" }],
   "rewrites": [
-    { "source": "/static/(.*)", "destination": "/static/$1" },
     { "source": "/(.*)", "destination": "/api/index.py" }
   ]
 }
