@@ -25,6 +25,10 @@ class User(UserMixin, db.Model):
     auto_screen: Mapped[bool] = mapped_column(Boolean, default=True)
     match_threshold: Mapped[int] = mapped_column(Integer, default=70)
     bias_detection: Mapped[bool] = mapped_column(Boolean, default=True)
+    notif_matches: Mapped[bool] = mapped_column(Boolean, default=True)
+    notif_weekly: Mapped[bool] = mapped_column(Boolean, default=True)
+    notif_expire: Mapped[bool] = mapped_column(Boolean, default=True)
+    notif_updates: Mapped[bool] = mapped_column(Boolean, default=False)
     jobs: Mapped[list["Job"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 

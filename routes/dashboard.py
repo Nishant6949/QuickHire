@@ -110,6 +110,14 @@ def settings_save():
         current_user.match_threshold = int(data["match_threshold"])
     if "bias_detection" in data:
         current_user.bias_detection = bool(data["bias_detection"])
+    if "notif_matches" in data:
+        current_user.notif_matches = bool(data["notif_matches"])
+    if "notif_weekly" in data:
+        current_user.notif_weekly = bool(data["notif_weekly"])
+    if "notif_expire" in data:
+        current_user.notif_expire = bool(data["notif_expire"])
+    if "notif_updates" in data:
+        current_user.notif_updates = bool(data["notif_updates"])
 
     db.session.commit()
     return jsonify({"success": True})

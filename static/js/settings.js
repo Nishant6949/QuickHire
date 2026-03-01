@@ -49,6 +49,32 @@ function saveSettings() {
         });
 }
 
+function saveNotifications() {
+    const data = {
+        notif_matches: document.getElementById('notif-matches').checked,
+        notif_weekly: document.getElementById('notif-weekly').checked,
+        notif_expire: document.getElementById('notif-expire').checked,
+        notif_updates: document.getElementById('notif-updates').checked,
+    };
+
+    fetch('/dashboard/settings/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                if (window.toast) window.toast('Notification preferences saved', 'success');
+            } else {
+                if (window.toast) window.toast(res.error || 'Failed to save', 'error');
+            }
+        })
+        .catch(() => {
+            if (window.toast) window.toast('Network error', 'error');
+        });
+}
+
 function showDeleteDataModal() {
     document.getElementById('delete-data-confirm').value = '';
     document.getElementById('delete-data-modal').style.display = 'flex';
