@@ -362,30 +362,46 @@
             return;
         }
 
-        var formData = new FormData();
-        pdfs.forEach(function (f) { formData.append("resumes", f); });
-
         els.resumeDropZone.classList.add("uploading");
+        var uploaded = 0;
+        var failed = 0;
+        var total = pdfs.length;
 
-        fetch("/dashboard/upload-resumes/" + state.jobId, { method: "POST", body: formData })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
+        function uploadNext(i) {
+            if (i >= total) {
                 els.resumeDropZone.classList.remove("uploading");
-                if (data.success && data.candidates.length) {
-                    data.candidates.forEach(function (c) { state.resumes.push(c); });
+                if (uploaded > 0) {
                     renderResumeList();
-                    window.toast(data.candidates.length + " resume(s) uploaded", "success");
-                } else if (data.error) {
-                    window.toast(data.error, "error");
+                    window.toast(uploaded + "/" + total + " resume(s) uploaded", "success");
                 } else {
                     window.toast("No valid resumes could be processed", "error");
                 }
-            })
-            .catch(function () {
-                els.resumeDropZone.classList.remove("uploading");
-                window.toast("Network error. Please try again.", "error");
-            });
+                return;
+            }
 
+            window.toast("Uploading " + (i + 1) + "/" + total + ": " + pdfs[i].name, "info");
+            var formData = new FormData();
+            formData.append("resumes", pdfs[i]);
+
+            fetch("/dashboard/upload-resumes/" + state.jobId, { method: "POST", body: formData })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.success && data.candidates && data.candidates.length) {
+                        data.candidates.forEach(function (c) { state.resumes.push(c); });
+                        uploaded++;
+                        renderResumeList();
+                    } else {
+                        failed++;
+                    }
+                    uploadNext(i + 1);
+                })
+                .catch(function () {
+                    failed++;
+                    uploadNext(i + 1);
+                });
+        }
+
+        uploadNext(0);
         els.resumeFileInput.value = "";
     }
 
