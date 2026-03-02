@@ -34,6 +34,11 @@ def download_file(bucket, path):
     return client.storage.from_(bucket).download(path)
 
 
+def get_public_url(bucket, path):
+    """Return the public URL for a file in Supabase Storage."""
+    client = _get_client()
+    return client.storage.from_(bucket).get_public_url(path)
+
 
 def delete_file(bucket, path):
     """Delete a file from Supabase Storage."""

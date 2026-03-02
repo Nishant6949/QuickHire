@@ -1,8 +1,7 @@
 import logging
 
 import anthropic
-from markupsafe import escape
-from flask import Blueprint, request, jsonify, current_app, Response
+from flask import Blueprint, request, jsonify, current_app, Response, redirect
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
@@ -10,7 +9,7 @@ from user_model import db, Job, Candidate
 from services.ai import score_candidate
 from services.email import send_invite_email, send_decision_email, send_custom_email
 from services.pdf import generate_candidate_report, generate_onboarding_doc
-from services.storage import delete_file
+from services.storage import upload_file, delete_file, get_public_url
 from utils.formatting import (
     extract_pdf_text, serialize_candidate,
     compute_analytics_data, build_analytics_csv,
@@ -49,6 +48,12 @@ def upload_resumes(job_id):
 
         if not resume_text:
             continue
+
+        storage_path = f"resumes/{job_id}/{filename}"
+        try:
+            upload_file("documents", storage_path, file_bytes)
+        except Exception as e:
+            logger.error("Resume upload to storage failed for %s: %s", filename, e)
 
         candidate = Candidate(job_id=job.id, resume_text=resume_text, resume_filename=filename)
         db.session.add(candidate)
@@ -245,21 +250,14 @@ def resume_pdf(candidate_id):
     if not candidate or candidate.job.user_id != current_user.id:
         return jsonify({"success": False, "error": "Candidate not found"}), 404
 
-    name = escape(candidate.candidate_name or candidate.resume_filename or "Resume")
-    text = escape(candidate.resume_text or "No resume text available.")
+    storage_path = f"resumes/{candidate.job_id}/{candidate.resume_filename}"
+    try:
+        url = get_public_url("documents", storage_path)
+    except Exception as e:
+        logger.error("Resume URL generation failed: %s", e)
+        return jsonify({"success": False, "error": "Resume file not found"}), 404
 
-    html = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>{name} — Resume</title>
-<style>
-body {{ font-family: -apple-system, system-ui, sans-serif; max-width: 800px;
-       margin: 2rem auto; padding: 0 1rem; line-height: 1.6; color: #1a1a1a; }}
-h1 {{ font-size: 1.4rem; border-bottom: 2px solid #e5e7eb; padding-bottom: .5rem; }}
-pre {{ white-space: pre-wrap; word-wrap: break-word; font-family: inherit;
-       background: #f9fafb; padding: 1.5rem; border-radius: 8px; }}
-</style></head>
-<body><h1>{name}</h1><pre>{text}</pre></body></html>"""
-
-    return Response(html, content_type="text/html")
+    return redirect(url)
 
 
 @candidates_api_bp.route("/send-invites", methods=["POST"])
