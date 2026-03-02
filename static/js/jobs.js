@@ -267,33 +267,47 @@
 
     function uploadNewResumes(jobId, files, statusEl, analyseBtn) {
         if (!jobId) return;
-        var form = new FormData();
-        var count = 0;
-        Array.from(files).forEach(function (f) {
-            if (f.name.toLowerCase().endsWith('.pdf')) { form.append('resumes', f); count++; }
+        var pdfFiles = Array.from(files).filter(function (f) {
+            return f.name.toLowerCase().endsWith('.pdf');
         });
-        if (!count) { if (window.toast) window.toast('Only PDF files are supported', 'error'); return; }
+        if (!pdfFiles.length) { if (window.toast) window.toast('Only PDF files are supported', 'error'); return; }
 
-        if (statusEl) { statusEl.style.display = ''; statusEl.textContent = 'Uploading ' + count + ' file(s)\u2026'; }
+        if (statusEl) { statusEl.style.display = ''; statusEl.textContent = 'Uploading 0/' + pdfFiles.length + ' file(s)\u2026'; }
         if (analyseBtn) analyseBtn.disabled = true;
 
-        fetch('/dashboard/upload-resumes/' + jobId, { method: 'POST', body: form })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
+        var totalCandidates = [];
+
+        function uploadNext(index) {
+            if (index >= pdfFiles.length) {
                 if (analyseBtn) analyseBtn.disabled = false;
-                if (data.success) {
-                    if (statusEl) statusEl.textContent = data.candidates.length + ' resume(s) uploaded. Click "Analyse" to score them.';
-                    if (window.toast) window.toast(data.candidates.length + ' resume(s) uploaded', 'success');
+                if (totalCandidates.length) {
+                    if (statusEl) statusEl.textContent = totalCandidates.length + ' resume(s) uploaded. Click "Analyse" to score them.';
+                    if (window.toast) window.toast(totalCandidates.length + ' resume(s) uploaded', 'success');
                 } else {
-                    if (statusEl) statusEl.textContent = data.error || 'Upload failed';
-                    if (window.toast) window.toast(data.error || 'Upload failed', 'error');
+                    if (statusEl) statusEl.textContent = 'No valid resumes could be processed';
+                    if (window.toast) window.toast('Upload failed', 'error');
                 }
-            })
-            .catch(function () {
-                if (analyseBtn) analyseBtn.disabled = false;
-                if (statusEl) statusEl.textContent = 'Network error during upload';
-                if (window.toast) window.toast('Network error', 'error');
-            });
+                return;
+            }
+
+            var form = new FormData();
+            form.append('resumes', pdfFiles[index]);
+            if (statusEl) statusEl.textContent = 'Uploading ' + (index + 1) + '/' + pdfFiles.length + ' \u2014 ' + pdfFiles[index].name;
+
+            fetch('/dashboard/upload-resumes/' + jobId, { method: 'POST', body: form })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        totalCandidates = totalCandidates.concat(data.candidates);
+                    }
+                    uploadNext(index + 1);
+                })
+                .catch(function () {
+                    uploadNext(index + 1);
+                });
+        }
+
+        uploadNext(0);
     }
 
     function analyseNewCandidates(jobId, btn) {

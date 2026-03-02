@@ -1,8 +1,7 @@
-import io
 import logging
 
 import anthropic
-from flask import Blueprint, request, jsonify, current_app, send_file, Response
+from flask import Blueprint, request, jsonify, current_app, Response, redirect
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
@@ -10,7 +9,7 @@ from user_model import db, Job, Candidate
 from services.ai import score_candidate
 from services.email import send_invite_email, send_decision_email, send_custom_email
 from services.pdf import generate_candidate_report, generate_onboarding_doc
-from services.storage import upload_file, download_file, delete_file
+from services.storage import upload_file, delete_file, get_public_url
 from utils.formatting import (
     extract_pdf_text, serialize_candidate,
     compute_analytics_data, build_analytics_csv,
@@ -254,15 +253,12 @@ def resume_pdf(candidate_id):
 
     storage_path = f"resumes/{candidate.job_id}/{candidate.resume_filename}"
     try:
-        file_bytes = download_file("documents", storage_path)
+        url = get_public_url("documents", storage_path)
     except Exception as e:
-        logger.error("Resume download from storage failed: %s", e)
+        logger.error("Resume URL generation failed: %s", e)
         return jsonify({"success": False, "error": "Resume file not found"}), 404
 
-    return send_file(
-        io.BytesIO(file_bytes), mimetype="application/pdf",
-        download_name=candidate.resume_filename
-    )
+    return redirect(url)
 
 
 @candidates_api_bp.route("/send-invites", methods=["POST"])
