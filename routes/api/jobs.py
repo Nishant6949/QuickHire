@@ -50,7 +50,7 @@ def upload_jd():
             upload_file("documents", storage_path, file_bytes)
         except Exception as e:
             logger.error("JD upload to storage failed: %s", e)
-            return jsonify({"success": False, "error": "Failed to upload file"}), 500
+            # Don't block job creation — the extracted text is sufficient for analysis
 
     elif request.form.get("jd_text", "").strip():
         jd_text = request.form["jd_text"].strip()

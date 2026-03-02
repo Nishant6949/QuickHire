@@ -55,7 +55,7 @@ def upload_resumes(job_id):
             upload_file("documents", storage_path, file_bytes)
         except Exception as e:
             logger.error("Resume upload to storage failed for %s: %s", filename, e)
-            continue
+            # Don't skip candidate — the extracted text is sufficient for AI screening
 
         candidate = Candidate(job_id=job.id, resume_text=resume_text, resume_filename=filename)
         db.session.add(candidate)

@@ -23,7 +23,7 @@ def upload_file(bucket, path, file_bytes, content_type="application/pdf"):
     """Upload a file to Supabase Storage. Returns the public URL."""
     client = _get_client()
     client.storage.from_(bucket).upload(
-        path, file_bytes, {"content-type": content_type}
+        path, file_bytes, {"content-type": content_type, "upsert": "true"}
     )
     return client.storage.from_(bucket).get_public_url(path)
 

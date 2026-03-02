@@ -26,7 +26,7 @@ def clamp_score(value):
         return 0
 
 
-def call_claude(client, prompt, system=None, max_retries=3):
+def call_claude(client, prompt, system=None, max_retries=2):
     for attempt in range(max_retries + 1):
         try:
             kwargs = {
@@ -40,7 +40,7 @@ def call_claude(client, prompt, system=None, max_retries=3):
             return response.content[0].text
         except anthropic.RateLimitError:
             if attempt < max_retries:
-                wait = 2 ** (attempt + 1)
+                wait = attempt + 1  # 1s, 2s — shorter waits for serverless
                 logger.warning("Claude rate limited, retrying in %ds (attempt %d/%d)", wait, attempt + 1, max_retries)
                 time.sleep(wait)
             else:
