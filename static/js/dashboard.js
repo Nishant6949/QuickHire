@@ -364,7 +364,6 @@
 
         els.resumeDropZone.classList.add("uploading");
         var uploaded = 0;
-        var failed = 0;
         var total = pdfs.length;
 
         function uploadNext(i) {
@@ -390,13 +389,10 @@
                         data.candidates.forEach(function (c) { state.resumes.push(c); });
                         uploaded++;
                         renderResumeList();
-                    } else {
-                        failed++;
                     }
                     uploadNext(i + 1);
                 })
                 .catch(function () {
-                    failed++;
                     uploadNext(i + 1);
                 });
         }

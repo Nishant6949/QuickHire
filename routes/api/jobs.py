@@ -206,7 +206,13 @@ def jobs_filtered():
     days = request.args.get("days") or None
     jobs_data = build_jobs_list(current_user.id, q=q, dept=dept, status=status, days=days)
     stats = job_stats_for_user(current_user.id)
-    departments = sorted(set(j["department"] for j in build_jobs_list(current_user.id) if j["department"]))
+    department_rows = db.session.execute(
+        db.select(Job.department)
+        .where(Job.user_id == current_user.id)
+        .where(Job.department.isnot(None))
+        .distinct()
+    ).scalars().all()
+    departments = sorted(d for d in department_rows if d)
     return jsonify({"success": True, "jobs": jobs_data, "stats": stats, "departments": departments})
 
 

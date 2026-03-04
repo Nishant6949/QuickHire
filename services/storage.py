@@ -48,22 +48,6 @@ def upload_file(bucket, path, file_bytes, content_type="application/pdf"):
     return client.storage.from_(bucket).get_public_url(path)
 
 
-def download_file(bucket, path):
-    """Download a file from Supabase Storage. Returns bytes."""
-    if not storage_enabled():
-        raise RuntimeError("Supabase storage is disabled")
-    client = _get_client()
-    return client.storage.from_(bucket).download(path)
-
-
-def get_public_url(bucket, path):
-    """Return the public URL for a file in Supabase Storage."""
-    if not storage_enabled():
-        raise RuntimeError("Supabase storage is disabled")
-    client = _get_client()
-    return client.storage.from_(bucket).get_public_url(path)
-
-
 def delete_file(bucket, path):
     """Delete a file from Supabase Storage."""
     if not storage_enabled():

@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, Text, DateTime, Boolean, ForeignKey
 from flask_login import LoginManager, UserMixin
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 
 class Base(DeclarativeBase):

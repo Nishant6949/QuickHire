@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user, logout_user
+from sqlalchemy.orm import selectinload
 
 from user_model import db, User, Job, Candidate
 from services.storage import delete_file
@@ -45,6 +46,7 @@ def jobs():
 def candidates():
     all_candidates = db.session.execute(
         db.select(Candidate)
+        .options(selectinload(Candidate.job))
         .join(Job)
         .where(Job.user_id == current_user.id)
         .where(Candidate.match_score.isnot(None))

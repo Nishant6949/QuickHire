@@ -147,23 +147,29 @@ def serialize_candidate(c):
 
 
 def job_stats_for_user(user_id):
-    all_jobs = db.session.execute(
-        db.select(Job).where(Job.user_id == user_id)
-    ).scalars().all()
+    status_rows = db.session.execute(
+        db.select(Job.status, db.func.count(Job.id))
+        .where(Job.user_id == user_id)
+        .group_by(Job.status)
+    ).all()
+    status_counts = {status: int(count) for status, count in status_rows}
+    total = sum(status_counts.values())
     return {
-        "total": len(all_jobs),
-        "open": sum(1 for j in all_jobs if j.status == "open"),
-        "draft": sum(1 for j in all_jobs if j.status == "draft"),
-        "completed": sum(1 for j in all_jobs if j.status == "completed"),
+        "total": total,
+        "open": status_counts.get("open", 0),
+        "draft": status_counts.get("draft", 0),
+        "completed": status_counts.get("completed", 0),
     }
 
 
 def build_jobs_list(user_id, q=None, dept=None, status=None, days=None):
-    query = db.select(Job).where(Job.user_id == user_id).order_by(Job.created_at.desc())
+    query = db.select(Job).where(Job.user_id == user_id)
     if dept and dept != "all":
         query = query.where(Job.department == dept)
     if status and status != "all":
         query = query.where(Job.status == status)
+    if q:
+        query = query.where(Job.title.ilike("%" + q + "%"))
     if days and days != "all":
         try:
             cutoff = datetime.now(timezone.utc) - timedelta(days=int(days))
@@ -171,21 +177,25 @@ def build_jobs_list(user_id, q=None, dept=None, status=None, days=None):
         except (ValueError, TypeError):
             pass
 
+    query = query.order_by(Job.created_at.desc())
     all_jobs = db.session.execute(query).scalars().all()
+    job_ids = [j.id for j in all_jobs]
 
-    if q:
-        q_lower = q.lower()
-        all_jobs = [j for j in all_jobs if q_lower in (j.title or "").lower()]
+    candidate_counts = {}
+    if job_ids:
+        count_rows = db.session.execute(
+            db.select(Candidate.job_id, db.func.count(Candidate.id))
+            .where(Candidate.job_id.in_(job_ids))
+            .group_by(Candidate.job_id)
+        ).all()
+        candidate_counts = {job_id: int(count) for job_id, count in count_rows}
 
     jobs_data = []
     for j in all_jobs:
-        candidate_count = db.session.execute(
-            db.select(db.func.count(Candidate.id)).where(Candidate.job_id == j.id)
-        ).scalar() or 0
         jobs_data.append({
             "id": j.id, "title": j.title or "Untitled",
             "department": j.department or "", "location": j.location or "",
-            "candidate_count": candidate_count, "status": j.status,
+            "candidate_count": candidate_counts.get(j.id, 0), "status": j.status,
             "status_html": render_status_badge(j.status),
             "created_at": j.created_at.strftime("%Y-%m-%d"),
         })
@@ -285,9 +295,10 @@ def compute_analytics_data(user_id, range_param):
 
     hired_candidates = [c for c in all_candidates_ever if c.status == "final_hired"]
     hired_candidates.sort(key=lambda c: c.created_at, reverse=True)
+    job_map = {j.id: j for j in all_jobs}
     recent_hires = []
     for c in hired_candidates[:10]:
-        job = next((j for j in all_jobs if j.id == c.job_id), None)
+        job = job_map.get(c.job_id)
         recent_hires.append({
             "name": c.candidate_name or c.resume_filename,
             "job_title": job.title if job else "Unknown",
