@@ -1,4 +1,5 @@
 import logging
+import os
 
 import anthropic
 from markupsafe import escape
@@ -19,6 +20,46 @@ from utils.formatting import (
 logger = logging.getLogger(__name__)
 
 candidates_api_bp = Blueprint("candidates_api_bp", __name__, url_prefix="/dashboard")
+
+
+def _screening_batch_size():
+    raw = os.getenv("SCREENING_BATCH_SIZE")
+    if raw:
+        try:
+            return max(1, int(raw))
+        except ValueError:
+            logger.warning("Invalid SCREENING_BATCH_SIZE=%s. Falling back to default.", raw)
+    # Vercel Hobby-safe default
+    if os.getenv("VERCEL"):
+        return 1
+    return 5
+
+
+def _serialize_ranked_candidates(candidates):
+    threshold = current_user.match_threshold if current_user.match_threshold is not None else 70
+    ranked = sorted(candidates, key=lambda c: c.match_score or 0, reverse=True)
+    return [serialize_candidate(c) for c in ranked if (c.match_score or 0) >= threshold]
+
+
+def _score_candidate_batch(candidates, client, jd_text):
+    rate_limited = False
+    for candidate in candidates:
+        try:
+            score_candidate(candidate, client, jd_text)
+        except anthropic.RateLimitError:
+            logger.warning("Rate limited after retries for %s", candidate.resume_filename)
+            rate_limited = True
+            candidate.status = "error"
+            candidate.match_score = 0
+            candidate.match_summary = "AI service is temporarily busy. Please retry in a few minutes."
+            candidate.candidate_name = candidate.candidate_name or ""
+        except Exception as e:
+            logger.error("AI screening failed for %s: %s", candidate.resume_filename, e)
+            candidate.status = "error"
+            candidate.match_score = 0
+            candidate.match_summary = f"Could not analyze this resume: {str(e)[:100]}"
+            candidate.candidate_name = candidate.candidate_name or ""
+    return rate_limited
 
 
 @candidates_api_bp.route("/upload-resumes/<int:job_id>", methods=["POST"])
@@ -93,11 +134,8 @@ def start_screening(job_id):
     if not job or job.user_id != current_user.id:
         return jsonify({"success": False, "error": "Job not found"}), 404
 
-    if job.status not in ("ready", "completed"):
+    if job.status not in ("ready", "completed", "processing"):
         return jsonify({"success": False, "error": "Job is not ready for screening"}), 400
-
-    job.status = "processing"
-    db.session.commit()
 
     api_key = current_app.config.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -116,32 +154,40 @@ def start_screening(job_id):
         db.session.commit()
         return jsonify({"success": False, "error": "No resumes to screen. Please upload resumes first."}), 400
 
-    rate_limited = False
-    for candidate in candidates:
-        try:
-            score_candidate(candidate, client, job.jd_text)
-        except anthropic.RateLimitError:
-            logger.warning("Rate limited after retries for %s", candidate.resume_filename)
-            rate_limited = True
-            candidate.status = "error"
-            candidate.match_score = 0
-            candidate.match_summary = "AI service is temporarily busy. Please retry in a few minutes."
-            candidate.candidate_name = candidate.candidate_name or ""
-        except Exception as e:
-            logger.error("AI screening failed for %s: %s", candidate.resume_filename, e)
-            candidate.status = "error"
-            candidate.match_score = 0
-            candidate.match_summary = f"Could not analyze this resume: {str(e)[:100]}"
-            candidate.candidate_name = candidate.candidate_name or ""
+    pending = [c for c in candidates if c.status in ("pending", None)]
+    total = len(candidates)
+    if not pending:
+        job.status = "completed"
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "results": _serialize_ranked_candidates(candidates),
+            "rate_limited": False,
+            "processed": 0,
+            "remaining": 0,
+            "total": total,
+            "completed": True,
+        })
 
-    job.status = "completed"
+    batch = pending[:_screening_batch_size()]
+    rate_limited = _score_candidate_batch(batch, client, job.jd_text)
+    remaining = max(0, len(pending) - len(batch))
+    job.status = "completed" if remaining == 0 else "processing"
     db.session.commit()
 
-    threshold = current_user.match_threshold if current_user.match_threshold is not None else 70
-    sorted_candidates = sorted(candidates, key=lambda c: c.match_score or 0, reverse=True)
-    results = [serialize_candidate(c) for c in sorted_candidates if (c.match_score or 0) >= threshold]
+    refreshed = db.session.execute(
+        db.select(Candidate).where(Candidate.job_id == job.id)
+    ).scalars().all()
 
-    return jsonify({"success": True, "results": results, "rate_limited": rate_limited})
+    return jsonify({
+        "success": True,
+        "results": _serialize_ranked_candidates(refreshed),
+        "rate_limited": rate_limited,
+        "processed": len(batch),
+        "remaining": remaining,
+        "total": total,
+        "completed": remaining == 0,
+    })
 
 
 @candidates_api_bp.route("/screen-new-candidates/<int:job_id>", methods=["POST"])
@@ -165,24 +211,10 @@ def screen_new_candidates(job_id):
         return jsonify({"success": False, "error": "AI service not configured"}), 500
 
     client = anthropic.Anthropic(api_key=api_key)
-    rate_limited = False
-
-    for candidate in unscored:
-        try:
-            score_candidate(candidate, client, job.jd_text)
-        except anthropic.RateLimitError:
-            rate_limited = True
-            candidate.status = "error"
-            candidate.match_score = 0
-            candidate.match_summary = "AI service is temporarily busy. Please retry in a few minutes."
-            candidate.candidate_name = candidate.candidate_name or ""
-        except Exception as e:
-            candidate.status = "error"
-            candidate.match_score = 0
-            candidate.match_summary = f"Could not analyze this resume: {str(e)[:100]}"
-            candidate.candidate_name = candidate.candidate_name or ""
-
-    job.status = "completed"
+    batch = unscored[:_screening_batch_size()]
+    rate_limited = _score_candidate_batch(batch, client, job.jd_text)
+    remaining = max(0, len(unscored) - len(batch))
+    job.status = "completed" if remaining == 0 else "processing"
     db.session.commit()
 
     all_candidates = db.session.execute(
@@ -191,14 +223,15 @@ def screen_new_candidates(job_id):
         .order_by(Candidate.match_score.desc())
     ).scalars().all()
 
-    threshold = current_user.match_threshold if current_user.match_threshold is not None else 70
-    filtered = [c for c in all_candidates if (c.match_score or 0) >= threshold]
-
     return jsonify({
         "success": True,
-        "results": [serialize_candidate(c) for c in filtered],
+        "results": _serialize_ranked_candidates(all_candidates),
         "rate_limited": rate_limited,
-        "new_count": len(unscored)
+        "new_count": len(batch),
+        "processed": len(batch),
+        "remaining": remaining,
+        "total": len(unscored),
+        "completed": remaining == 0,
     })
 
 

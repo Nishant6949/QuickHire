@@ -314,23 +314,58 @@
         if (!jobId) return;
         if (btn) { btn.disabled = true; btn.innerHTML = '<i data-feather="loader"></i> Analysing\u2026'; if (window.feather) feather.replace(); }
 
-        fetch('/dashboard/screen-new-candidates/' + jobId, { method: 'POST' })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-feather="zap"></i> Analyse'; if (window.feather) feather.replace(); }
-                if (data.success) {
-                    renderDetailCandidates(data.results);
-                    if (window.toast) window.toast(data.new_count + ' new candidate(s) analysed and ranked', 'success');
+        var processed = 0;
+        var sawRateLimit = false;
+        var latestResults = [];
+
+        function finishButton() {
+            if (!btn) return;
+            btn.disabled = false;
+            btn.innerHTML = '<i data-feather="zap"></i> Analyse';
+            if (window.feather) feather.replace();
+        }
+
+        function runBatch() {
+            fetch('/dashboard/screen-new-candidates/' + jobId, { method: 'POST' })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) {
+                        finishButton();
+                        if (window.toast) window.toast(data.error || 'No new candidates to analyse', 'error');
+                        return;
+                    }
+
+                    if (data.rate_limited) sawRateLimit = true;
+                    processed += data.processed || data.new_count || 0;
+                    latestResults = data.results || latestResults;
+
+                    if (btn) {
+                        btn.innerHTML = '<i data-feather="loader"></i> Analysing\u2026 (' + processed + ')';
+                        if (window.feather) feather.replace();
+                    }
+
+                    if (data.completed === false) {
+                        setTimeout(runBatch, 60);
+                        return;
+                    }
+
+                    finishButton();
+                    renderDetailCandidates(latestResults);
+                    if (window.toast) window.toast(processed + ' new candidate(s) analysed and ranked', 'success');
+                    if (sawRateLimit && window.toast) {
+                        window.toast('Some candidates hit AI rate limits. Retry Analyse to process remaining.', 'error');
+                    }
+
                     var row = tbody ? tbody.querySelector('tr[data-job-id="' + jobId + '"]') : null;
-                    if (row && row.cells[3]) row.cells[3].textContent = data.results.length;
-                } else {
-                    if (window.toast) window.toast(data.error || 'No new candidates to analyse', 'error');
-                }
-            })
-            .catch(function () {
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-feather="zap"></i> Analyse'; if (window.feather) feather.replace(); }
-                if (window.toast) window.toast('Network error', 'error');
-            });
+                    if (row && row.cells[3]) row.cells[3].textContent = latestResults.length;
+                })
+                .catch(function () {
+                    finishButton();
+                    if (window.toast) window.toast('Network error', 'error');
+                });
+        }
+
+        runBatch();
     }
 
     if (detailPanel) {

@@ -585,8 +585,8 @@
         els.screeningResults.style.display = "none";
         state.selectedIds.clear();
 
-        var progress = 0;
-        var fakeIndex = 0;
+        var processed = 0;
+        var sawRateLimit = false;
         els.progressFill.style.width = "0%";
         els.progressPercent.textContent = "0%";
         if (totalResumes > 0) {
@@ -595,48 +595,66 @@
             els.screeningResumeCount.textContent = "";
         }
 
-        var progressTimer = setInterval(function () {
-            if (progress >= 90) return;
-            progress += Math.floor(Math.random() * 8) + 2;
-            if (progress > 90) progress = 90;
-            els.progressFill.style.width = progress + "%";
-            els.progressPercent.textContent = progress + "%";
-            if (totalResumes > 1) {
-                var estimated = Math.min(Math.floor((progress / 90) * totalResumes) + 1, totalResumes);
-                if (estimated !== fakeIndex) {
-                    fakeIndex = estimated;
-                    els.screeningResumeCount.textContent = "Analyzing resume " + estimated + " of " + totalResumes + "...";
-                }
+        function updateProgress(done, total) {
+            var safeTotal = Math.max(total || totalResumes || 1, 1);
+            var safeDone = Math.min(done, safeTotal);
+            var pct = Math.floor((safeDone / safeTotal) * 100);
+            if (pct > 99 && safeDone < safeTotal) pct = 99;
+            els.progressFill.style.width = pct + "%";
+            els.progressPercent.textContent = pct + "%";
+
+            if (safeDone >= safeTotal) {
+                els.screeningResumeCount.textContent = "Finalizing results...";
+            } else {
+                els.screeningResumeCount.textContent = "Analyzing resume " + (safeDone + 1) + " of " + safeTotal + "...";
             }
-        }, 500);
+        }
 
-        fetch("/dashboard/start-screening/" + state.jobId, { method: "POST" })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                clearInterval(progressTimer);
-                els.progressFill.style.width = "100%";
-                els.progressPercent.textContent = "100%";
+        function finishWithError(message) {
+            window.toast(message || "Screening failed", "error");
+            goToStep(2);
+            renderResumeList();
+        }
 
-                if (data.success) {
-                    if (data.rate_limited) {
+        function runBatch() {
+            fetch("/dashboard/start-screening/" + state.jobId, { method: "POST" })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) {
+                        finishWithError(data.error);
+                        return;
+                    }
+
+                    if (data.rate_limited) sawRateLimit = true;
+
+                    processed += data.processed || 0;
+                    updateProgress(processed, data.total);
+
+                    if (data.results) state.results = data.results;
+
+                    if (data.completed === false) {
+                        setTimeout(runBatch, 60);
+                        return;
+                    }
+
+                    els.progressFill.style.width = "100%";
+                    els.progressPercent.textContent = "100%";
+                    els.screeningResumeCount.textContent = "Analysis complete.";
+
+                    if (sawRateLimit) {
                         window.toast("Some resumes could not be analyzed due to AI rate limits. You can retry later.", "error");
                     }
+
                     setTimeout(function () {
-                        state.results = data.results;
-                        showScreeningResults(data.results);
-                    }, 400);
-                } else {
-                    window.toast(data.error || "Screening failed", "error");
-                    goToStep(2);
-                    renderResumeList();
-                }
-            })
-            .catch(function () {
-                clearInterval(progressTimer);
-                window.toast("Network error during screening", "error");
-                goToStep(2);
-                renderResumeList();
-            });
+                        showScreeningResults(state.results || []);
+                    }, 250);
+                })
+                .catch(function () {
+                    finishWithError("Network error during screening");
+                });
+        }
+
+        runBatch();
     }
 
     function showScreeningResults(results) {
