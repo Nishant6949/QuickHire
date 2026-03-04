@@ -225,7 +225,7 @@ def screen_new_candidates(job_id):
 
     return jsonify({
         "success": True,
-        "results": _serialize_ranked_candidates(all_candidates),
+        "results": [serialize_candidate(c) for c in all_candidates],
         "rate_limited": rate_limited,
         "new_count": len(batch),
         "processed": len(batch),

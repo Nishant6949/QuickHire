@@ -252,7 +252,7 @@
 
         if (fileInput) {
             fileInput.addEventListener('change', function () {
-                if (fileInput.files.length) uploadNewResumes(jobId, fileInput.files, uploadStatus, analyseBtn);
+                if (fileInput.files.length) uploadNewResumes(jobId, fileInput.files, uploadStatus, analyseBtn, fileInput);
             });
         }
 
@@ -265,7 +265,7 @@
         if (window.feather) feather.replace();
     }
 
-    function uploadNewResumes(jobId, files, statusEl, analyseBtn) {
+    function uploadNewResumes(jobId, files, statusEl, analyseBtn, fileInput) {
         if (!jobId) return;
         var pdfFiles = Array.from(files).filter(function (f) {
             return f.name.toLowerCase().endsWith('.pdf');
@@ -276,6 +276,7 @@
         if (analyseBtn) analyseBtn.disabled = true;
 
         var totalCandidates = [];
+        var firstError = '';
 
         function uploadNext(index) {
             if (index >= pdfFiles.length) {
@@ -283,10 +284,23 @@
                 if (totalCandidates.length) {
                     if (statusEl) statusEl.textContent = totalCandidates.length + ' resume(s) uploaded. Click "Analyse" to score them.';
                     if (window.toast) window.toast(totalCandidates.length + ' resume(s) uploaded', 'success');
+                    // Refresh candidate cards so newly uploaded pending resumes appear immediately.
+                    fetch('/dashboard/job-detail/' + jobId)
+                        .then(function (res) { return res.json(); })
+                        .then(function (data) {
+                            if (data.success) {
+                                renderDetailCandidates(data.candidates);
+                                detailJd.style.display = 'none';
+                                detailCandidates.style.display = '';
+                            }
+                        })
+                        .catch(function () {});
                 } else {
-                    if (statusEl) statusEl.textContent = 'No valid resumes could be processed';
-                    if (window.toast) window.toast('Upload failed', 'error');
+                    var msg = firstError || 'No valid resumes could be processed';
+                    if (statusEl) statusEl.textContent = msg;
+                    if (window.toast) window.toast(msg, 'error');
                 }
+                if (fileInput) fileInput.value = '';
                 return;
             }
 
@@ -299,10 +313,13 @@
                 .then(function (data) {
                     if (data.success) {
                         totalCandidates = totalCandidates.concat(data.candidates);
+                    } else if (!firstError && data.error) {
+                        firstError = data.error;
                     }
                     uploadNext(index + 1);
                 })
                 .catch(function () {
+                    if (!firstError) firstError = 'Network error during upload';
                     uploadNext(index + 1);
                 });
         }
