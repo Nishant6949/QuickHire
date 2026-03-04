@@ -85,52 +85,77 @@ def _score_candidate_batch(candidates, client, jd_text):
 @candidates_api_bp.route("/upload-resumes/<int:job_id>", methods=["POST"])
 @login_required
 def upload_resumes(job_id):
-    job = db.session.get(Job, job_id)
-    if not job or job.user_id != current_user.id:
-        return jsonify({"success": False, "error": "Job not found"}), 404
+    try:
+        job = db.session.get(Job, job_id)
+        if not job or job.user_id != current_user.id:
+            return jsonify({"success": False, "error": "Job not found"}), 404
 
-    files = request.files.getlist("resumes")
-    if not files:
-        return jsonify({"success": False, "error": "No files provided"}), 400
+        files = request.files.getlist("resumes")
+        if not files:
+            return jsonify({"success": False, "error": "No files provided"}), 400
 
-    results = []
-    max_pages, max_chars = _resume_parse_limits()
+        max_pages, max_chars = _resume_parse_limits()
+        created = []
+        first_error = None
 
-    for file in files:
-        if not file.filename.lower().endswith(".pdf"):
-            continue
+        for file in files:
+            raw_name = (file.filename or "").strip()
+            if not raw_name:
+                if not first_error:
+                    first_error = "One or more selected files were empty."
+                continue
+            if not raw_name.lower().endswith(".pdf"):
+                continue
 
-        filename = secure_filename(file.filename)
-        file_bytes = file.read()
+            filename = secure_filename(raw_name)
+            file_bytes = file.read()
+            if not file_bytes:
+                if not first_error:
+                    first_error = f"File is empty: {filename}"
+                continue
 
-        try:
-            resume_text = extract_pdf_text(file_bytes, max_pages=max_pages, max_chars=max_chars)
-        except Exception as e:
-            logger.error("Resume PDF extraction failed for %s: %s", filename, e)
-            continue
+            try:
+                resume_text = extract_pdf_text(file_bytes, max_pages=max_pages, max_chars=max_chars)
+            except Exception as e:
+                logger.error("Resume PDF extraction failed for %s: %s", filename, e)
+                if not first_error:
+                    first_error = f"Could not read PDF: {filename}"
+                continue
 
-        if not resume_text:
-            continue
+            if not resume_text:
+                if not first_error:
+                    first_error = f"No readable text found in: {filename}"
+                continue
 
-        storage_path = f"resumes/{job_id}/{filename}"
-        try:
-            upload_file("documents", storage_path, file_bytes)
-        except Exception as e:
-            logger.error("Resume upload to storage failed for %s: %s", filename, e)
+            storage_path = f"resumes/{job_id}/{filename}"
+            try:
+                upload_file("documents", storage_path, file_bytes)
+            except Exception as e:
+                logger.error("Resume upload to storage failed for %s: %s", filename, e)
 
-        candidate = Candidate(job_id=job.id, resume_text=resume_text, resume_filename=filename)
-        db.session.add(candidate)
-        db.session.flush()
-        results.append({"id": candidate.id, "filename": filename})
+            candidate = Candidate(job_id=job.id, resume_text=resume_text, resume_filename=filename)
+            db.session.add(candidate)
+            created.append(candidate)
 
-    if not results:
+        if not created:
+            db.session.rollback()
+            return jsonify({
+                "success": False,
+                "error": first_error or "No valid resumes could be processed"
+            }), 400
+
+        job.status = "ready"
         db.session.commit()
-        return jsonify({"success": False, "error": "No valid resumes could be processed"}), 400
 
-    job.status = "ready"
-    db.session.commit()
-
-    return jsonify({"success": True, "candidates": results})
+        results = [{"id": c.id, "filename": c.resume_filename} for c in created]
+        return jsonify({"success": True, "candidates": results})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception("Unexpected error uploading resumes for job %s: %s", job_id, e)
+        return jsonify({
+            "success": False,
+            "error": "Server error while processing resumes. Please try a smaller PDF."
+        }), 500
 
 
 @candidates_api_bp.route("/remove-resume/<int:candidate_id>", methods=["DELETE"])
