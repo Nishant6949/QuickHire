@@ -35,6 +35,26 @@ def _screening_batch_size():
     return 5
 
 
+def _resume_parse_limits():
+    pages_raw = os.getenv("RESUME_PARSE_MAX_PAGES")
+    chars_raw = os.getenv("RESUME_PARSE_MAX_CHARS")
+    try:
+        pages = int(pages_raw) if pages_raw else None
+    except ValueError:
+        pages = None
+    try:
+        chars = int(chars_raw) if chars_raw else None
+    except ValueError:
+        chars = None
+
+    if pages is None:
+        pages = 3 if os.getenv("VERCEL") else None
+    if chars is None:
+        chars = 20000 if os.getenv("VERCEL") else None
+
+    return pages, chars
+
+
 def _serialize_ranked_candidates(candidates):
     threshold = current_user.match_threshold if current_user.match_threshold is not None else 70
     ranked = sorted(candidates, key=lambda c: c.match_score or 0, reverse=True)
@@ -74,6 +94,7 @@ def upload_resumes(job_id):
         return jsonify({"success": False, "error": "No files provided"}), 400
 
     results = []
+    max_pages, max_chars = _resume_parse_limits()
 
     for file in files:
         if not file.filename.lower().endswith(".pdf"):
@@ -83,7 +104,7 @@ def upload_resumes(job_id):
         file_bytes = file.read()
 
         try:
-            resume_text = extract_pdf_text(file_bytes)
+            resume_text = extract_pdf_text(file_bytes, max_pages=max_pages, max_chars=max_chars)
         except Exception as e:
             logger.error("Resume PDF extraction failed for %s: %s", filename, e)
             continue

@@ -10,16 +10,25 @@ import pdfplumber
 from user_model import db, Job, Candidate
 
 
-def extract_pdf_text(source):
-    """Extract text from a PDF file path or in-memory bytes."""
+def extract_pdf_text(source, max_pages=None, max_chars=None):
+    """Extract text from a PDF file path or in-memory bytes.
+
+    Optional limits help keep serverless requests fast:
+    - max_pages: stop after N pages
+    - max_chars: stop after N extracted characters
+    """
     if isinstance(source, (bytes, bytearray)):
         source = io.BytesIO(source)
     text = ""
     with pdfplumber.open(source) as pdf:
-        for page in pdf.pages:
+        pages = pdf.pages[:max_pages] if max_pages else pdf.pages
+        for page in pages:
             page_text = page.extract_text()
             if page_text:
                 text += page_text + "\n"
+                if max_chars and len(text) >= max_chars:
+                    text = text[:max_chars]
+                    break
     return text.strip()
 
 

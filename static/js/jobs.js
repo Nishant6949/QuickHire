@@ -309,7 +309,24 @@
             if (statusEl) statusEl.textContent = 'Uploading ' + (index + 1) + '/' + pdfFiles.length + ' \u2014 ' + pdfFiles[index].name;
 
             fetch('/dashboard/upload-resumes/' + jobId, { method: 'POST', body: form })
-                .then(function (res) { return res.json(); })
+                .then(function (res) {
+                    return res.text().then(function (body) {
+                        var data = null;
+                        try {
+                            data = body ? JSON.parse(body) : {};
+                        } catch (e) {
+                            data = {};
+                        }
+                        if (!res.ok) {
+                            var fallback = 'Upload failed (' + res.status + ')';
+                            if (res.status === 413) fallback = 'File is too large. Please upload a smaller PDF.';
+                            if (res.status === 504) fallback = 'Upload timed out. Try a smaller PDF.';
+                            data.success = false;
+                            data.error = data.error || fallback;
+                        }
+                        return data;
+                    });
+                })
                 .then(function (data) {
                     if (data.success) {
                         totalCandidates = totalCandidates.concat(data.candidates);
