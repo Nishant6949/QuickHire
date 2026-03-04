@@ -693,17 +693,29 @@
 
         if (sendBtn) {
             sendBtn.addEventListener('click', function () {
+                if (!_inviteCandidateId) {
+                    if (window.toast) window.toast('No candidate selected', 'error');
+                    return;
+                }
                 var link = (document.getElementById('jd-invite-link') || {}).value || '';
                 var msg = (document.getElementById('jd-invite-message') || {}).value || '';
+                var schedulingLink = link.trim();
+                if (!schedulingLink) {
+                    if (window.toast) window.toast('Please provide a scheduling link', 'error');
+                    return;
+                }
+
+                var candidateId = parseInt(_inviteCandidateId);
                 sendBtn.disabled = true;
-                sendBtn.textContent = 'Sending\u2026';
+                sendBtn.innerHTML = '<i data-feather="loader"></i> Sending\u2026';
+                if (window.feather) feather.replace();
 
                 fetch('/dashboard/send-invites', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        candidate_ids: [parseInt(_inviteCandidateId)],
-                        scheduling_link: link.trim(),
+                        candidate_ids: [candidateId],
+                        scheduling_link: schedulingLink,
                         message: msg
                     })
                 })
@@ -716,13 +728,23 @@
                             closeInviteModal();
                             var sent = data.results && data.results[0] && data.results[0].email_sent;
                             if (window.toast) window.toast(sent ? 'Invite sent!' : 'Invite recorded (email not configured)', 'success');
-                            var invBtn = detailCandidates.querySelector('.jd-invite-btn[data-id="' + _inviteCandidateId + '"]');
+                            var invBtn = detailCandidates.querySelector('.jd-invite-btn[data-id="' + candidateId + '"]');
                             if (invBtn) {
                                 var card = invBtn.closest('.result-card');
                                 if (card) {
                                     var badge = card.querySelector('.job-card-badge');
                                     if (badge) { badge.className = 'job-card-badge badge-invited'; badge.textContent = 'Invited'; }
+                                    else {
+                                        var scoreWrap = card.querySelector('.result-card-header > div:last-child');
+                                        if (scoreWrap) {
+                                            var newBadge = document.createElement('span');
+                                            newBadge.className = 'job-card-badge badge-invited';
+                                            newBadge.textContent = 'Invited';
+                                            scoreWrap.insertBefore(newBadge, scoreWrap.firstChild);
+                                        }
+                                    }
                                 }
+                                invBtn.remove();
                             }
                         } else {
                             if (window.toast) window.toast(data.error || 'Failed to send invite', 'error');
