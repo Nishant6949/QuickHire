@@ -37,7 +37,9 @@
         <select class="settings-input" id="cand-status-filter" style="width:150px;">
             <option value="all">All Statuses</option>
             <option value="scored">Scored</option>
+            <option value="shortlisted">Shortlisted</option>
             <option value="invited">Invited</option>
+            <option value="interview_done">Interview Done</option>
             <option value="final_hired">Hired</option>
             <option value="final_rejected">Rejected</option>
         </select>
@@ -86,7 +88,7 @@
                     <div class="result-score {{ 'green' if c.match_score >= 90 else ('amber' if c.match_score >= 70 else 'red') }}"
                         style="width:40px;height:36px;font-size:var(--font-size-sm);">{{ c.match_score }}</div>
                 </td>
-                <td>{{ c.status_html|safe }}</td>
+                <td data-role="candidate-status">{{ c.status_html|safe }}</td>
                 <td style="white-space:nowrap;">
                     <button class="contact-btn card-pdf-btn" data-id="{{ c.id }}" type="button"{{ " disabled" if not c.candidate_email }}><i data-feather="mail"></i> Contact</button>
                     <button class="delete-cand-btn" data-id="{{ c.id }}" type="button" title="Delete candidate"

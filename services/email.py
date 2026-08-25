@@ -1,4 +1,5 @@
 import logging
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -12,6 +13,9 @@ def send_invite_email(to_email, candidate_name, job_title, interview_dt, duratio
     gmail_addr = current_app.config.get("GMAIL_ADDRESS")
     gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
     if not gmail_addr or not gmail_pass:
+        if os.getenv("EMAIL_MODE", "console").lower() == "console":
+            logger.info("EMAIL PREVIEW invite -> %s | job=%s | scheduling=%s", to_email, job_title, scheduling_link)
+            return True
         logger.error("Gmail credentials not configured — cannot send invite email")
         return False
 
@@ -83,6 +87,9 @@ def send_decision_email(to_email, candidate_name, job_title, decision, company_n
     gmail_addr = current_app.config.get("GMAIL_ADDRESS")
     gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
     if not gmail_addr or not gmail_pass:
+        if os.getenv("EMAIL_MODE", "console").lower() == "console":
+            logger.info("EMAIL PREVIEW decision=%s -> %s | job=%s", decision, to_email, job_title)
+            return True
         logger.error("Gmail credentials not configured — cannot send decision email")
         return False
 
@@ -142,6 +149,9 @@ def send_custom_email(to_email, candidate_name, subject, body_text, company_name
     gmail_addr = current_app.config.get("GMAIL_ADDRESS")
     gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
     if not gmail_addr or not gmail_pass:
+        if os.getenv("EMAIL_MODE", "console").lower() == "console":
+            logger.info("EMAIL PREVIEW custom -> %s | subject=%s", to_email, subject)
+            return True
         logger.error("Gmail credentials not configured — cannot send custom email")
         return False
 

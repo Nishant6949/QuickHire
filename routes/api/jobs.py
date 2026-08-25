@@ -10,6 +10,7 @@ from user_model import db, Job, Candidate
 from services.ai import (
     call_claude, parse_ai_json, build_jd_analysis_prompt,
     extract_job_title, extract_department, extract_location,
+    analyze_job_description_fallback,
 )
 from services.storage import upload_file, delete_file
 from utils.formatting import (
@@ -79,14 +80,17 @@ def analyze_jd(job_id):
         return jsonify({"success": False, "error": "Job not found"}), 404
 
     api_key = current_app.config.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        return jsonify({"success": False, "fallback": True, "error": "AI service not configured"})
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
-        system_msg, user_msgs = build_jd_analysis_prompt(job.jd_text)
-        raw = call_claude(client, user_msgs, system=system_msg)
-        result = parse_ai_json(raw)
+        if api_key:
+            client = anthropic.Anthropic(api_key=api_key)
+            system_msg, user_msgs = build_jd_analysis_prompt(job.jd_text)
+            raw = call_claude(client, user_msgs, system=system_msg)
+            result = parse_ai_json(raw)
+            mode = "anthropic"
+        else:
+            result = analyze_job_description_fallback(job.jd_text)
+            mode = "local"
 
         job.title = str(result.get("title", ""))[:200] or job.title
         job.department = str(result.get("department", ""))[:100] or job.department
@@ -112,11 +116,24 @@ def analyze_jd(job_id):
                 "employment_type": job.employment_type or "",
                 "salary_range": job.salary_range_text or "",
                 "key_skills": skills if isinstance(skills, list) else []
-            }
+            },
+            "analysis_mode": mode,
         })
     except Exception as e:
-        logger.error("JD analysis failed: %s", e)
-        return jsonify({"success": False, "fallback": True, "error": str(e)[:200]})
+        logger.error("JD analysis failed, using local fallback: %s", e)
+        try:
+            result = analyze_job_description_fallback(job.jd_text)
+            job.title = result.get("title") or job.title
+            job.department = result.get("department") or job.department
+            job.location = result.get("location") or job.location
+            job.seniority_level = result.get("seniority_level") or None
+            job.employment_type = result.get("employment_type") or None
+            job.salary_range_text = result.get("salary_range") or None
+            job.required_skills = json.dumps(result.get("key_skills", []))
+            db.session.commit()
+            return jsonify({"success": True, "analysis": result, "analysis_mode": "local"})
+        except Exception:
+            return jsonify({"success": False, "error": "Could not analyze this job description"}), 500
 
 
 @jobs_api_bp.route("/create-job", methods=["POST"])

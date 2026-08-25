@@ -30,6 +30,19 @@ class User(UserMixin, db.Model):
     notif_expire: Mapped[bool] = mapped_column(Boolean, default=True)
     notif_updates: Mapped[bool] = mapped_column(Boolean, default=False)
     jobs: Mapped[list["Job"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    team_members: Mapped[list["TeamMember"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
+
+
+class TeamMember(db.Model):
+    __tablename__ = "team_members"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("user.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(254), nullable=False)
+    role: Mapped[str] = mapped_column(String(100), nullable=False, default="Interviewer")
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="invited")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    owner: Mapped["User"] = relationship(back_populates="team_members")
 
 
 class Job(db.Model):

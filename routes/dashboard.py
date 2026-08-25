@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user, logout_user
 from sqlalchemy.orm import selectinload
 
-from user_model import db, User, Job, Candidate
+from user_model import db, User, Job, Candidate, TeamMember
 from services.storage import delete_file
 from utils.formatting import serialize_candidate, job_stats_for_user, build_jobs_list
 
@@ -92,7 +92,14 @@ def analytics():
 @dashboard_bp.route("/settings")
 @login_required
 def settings():
-    return render_template("dashboard/settings.html", active_page="settings")
+    team_members = db.session.execute(
+        db.select(TeamMember)
+        .where(TeamMember.owner_id == current_user.id)
+        .order_by(TeamMember.created_at.asc())
+    ).scalars().all()
+    return render_template(
+        "dashboard/settings.html", active_page="settings", team_members=team_members
+    )
 
 
 @dashboard_bp.route("/settings/save", methods=["POST"])
@@ -103,13 +110,20 @@ def settings_save():
         return jsonify({"success": False, "error": "No data provided"}), 400
 
     if "company_name" in data:
-        current_user.company_name = data["company_name"].strip()
+        company_name = str(data["company_name"]).strip()
+        if not company_name:
+            return jsonify({"success": False, "error": "Company name is required"}), 400
+        current_user.company_name = company_name[:200]
     if "company_size" in data:
-        current_user.company_size = data["company_size"]
+        current_user.company_size = str(data["company_size"])[:100]
     if "auto_screen" in data:
         current_user.auto_screen = bool(data["auto_screen"])
     if "match_threshold" in data:
-        current_user.match_threshold = int(data["match_threshold"])
+        try:
+            threshold = int(data["match_threshold"])
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "Match threshold must be a number"}), 400
+        current_user.match_threshold = max(0, min(100, threshold))
     if "bias_detection" in data:
         current_user.bias_detection = bool(data["bias_detection"])
     if "notif_matches" in data:
@@ -124,6 +138,40 @@ def settings_save():
     db.session.commit()
     return jsonify({"success": True})
 
+
+
+@dashboard_bp.route("/settings/team", methods=["POST"])
+@login_required
+def settings_add_team_member():
+    data = request.get_json(silent=True) or {}
+    name = str(data.get("name", "")).strip()
+    email = str(data.get("email", "")).strip().lower()
+    role = str(data.get("role", "Interviewer")).strip()
+    if not name or not email or "@" not in email:
+        return jsonify({"success": False, "error": "Enter a valid name and email"}), 400
+    allowed_roles = {"Recruiter", "Hiring Manager", "Interviewer", "Viewer"}
+    if role not in allowed_roles:
+        return jsonify({"success": False, "error": "Invalid team role"}), 400
+    existing = db.session.execute(
+        db.select(TeamMember).where(TeamMember.owner_id == current_user.id, TeamMember.email == email)
+    ).scalar_one_or_none()
+    if existing:
+        return jsonify({"success": False, "error": "That person is already in your team"}), 409
+    member = TeamMember(owner_id=current_user.id, name=name[:200], email=email[:254], role=role, status="invited")
+    db.session.add(member)
+    db.session.commit()
+    return jsonify({"success": True, "member": {"id": member.id, "name": member.name, "email": member.email, "role": member.role, "status": member.status}})
+
+
+@dashboard_bp.route("/settings/team/<int:member_id>", methods=["DELETE"])
+@login_required
+def settings_remove_team_member(member_id):
+    member = db.session.get(TeamMember, member_id)
+    if not member or member.owner_id != current_user.id:
+        return jsonify({"success": False, "error": "Team member not found"}), 404
+    db.session.delete(member)
+    db.session.commit()
+    return jsonify({"success": True})
 
 def _delete_all_user_data(user):
     """Delete all jobs, candidates, and storage files for a user."""

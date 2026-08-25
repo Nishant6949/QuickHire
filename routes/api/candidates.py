@@ -63,9 +63,10 @@ def _serialize_ranked_candidates(candidates):
 
 def _score_candidate_batch(candidates, client, jd_text):
     rate_limited = False
+    modes = set()
     for candidate in candidates:
         try:
-            score_candidate(candidate, client, jd_text)
+            modes.add(score_candidate(candidate, client, jd_text))
         except anthropic.RateLimitError:
             logger.warning("Rate limited after retries for %s", candidate.resume_filename)
             rate_limited = True
@@ -79,7 +80,7 @@ def _score_candidate_batch(candidates, client, jd_text):
             candidate.match_score = 0
             candidate.match_summary = f"Could not analyze this resume: {str(e)[:100]}"
             candidate.candidate_name = candidate.candidate_name or ""
-    return rate_limited
+    return rate_limited, ("anthropic" if "anthropic" in modes else "local")
 
 
 @candidates_api_bp.route("/upload-resumes/<int:job_id>", methods=["POST"])
@@ -184,12 +185,7 @@ def start_screening(job_id):
         return jsonify({"success": False, "error": "Job is not ready for screening"}), 400
 
     api_key = current_app.config.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        job.status = "ready"
-        db.session.commit()
-        return jsonify({"success": False, "error": "AI service not configured"}), 500
-
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic(api_key=api_key) if api_key else None
 
     candidates = db.session.execute(
         db.select(Candidate).where(Candidate.job_id == job.id)
@@ -216,7 +212,7 @@ def start_screening(job_id):
         })
 
     batch = pending[:_screening_batch_size()]
-    rate_limited = _score_candidate_batch(batch, client, job.jd_text)
+    rate_limited, screening_mode = _score_candidate_batch(batch, client, job.jd_text)
     remaining = max(0, len(pending) - len(batch))
     job.status = "completed" if remaining == 0 else "processing"
     db.session.commit()
@@ -233,6 +229,7 @@ def start_screening(job_id):
         "remaining": remaining,
         "total": total,
         "completed": remaining == 0,
+        "screening_mode": screening_mode,
     })
 
 
@@ -253,12 +250,9 @@ def screen_new_candidates(job_id):
         return jsonify({"success": False, "error": "No new candidates to screen"}), 400
 
     api_key = current_app.config.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        return jsonify({"success": False, "error": "AI service not configured"}), 500
-
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic(api_key=api_key) if api_key else None
     batch = unscored[:_screening_batch_size()]
-    rate_limited = _score_candidate_batch(batch, client, job.jd_text)
+    rate_limited, screening_mode = _score_candidate_batch(batch, client, job.jd_text)
     remaining = max(0, len(unscored) - len(batch))
     job.status = "completed" if remaining == 0 else "processing"
     db.session.commit()
@@ -278,7 +272,29 @@ def screen_new_candidates(job_id):
         "remaining": remaining,
         "total": len(unscored),
         "completed": remaining == 0,
+        "screening_mode": screening_mode,
     })
+
+
+@candidates_api_bp.route("/candidate-status/<int:candidate_id>", methods=["PATCH"])
+@login_required
+def update_candidate_status(candidate_id):
+    candidate = db.session.get(Candidate, candidate_id)
+    if not candidate or candidate.job.user_id != current_user.id:
+        return jsonify({"success": False, "error": "Candidate not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    new_status = str(data.get("status", "")).strip()
+    allowed = {
+        "scored", "shortlisted", "invited", "interview_done",
+        "final_hired", "final_rejected"
+    }
+    if new_status not in allowed:
+        return jsonify({"success": False, "error": "Invalid candidate status"}), 400
+
+    candidate.status = new_status
+    db.session.commit()
+    return jsonify({"success": True, "candidate": serialize_candidate(candidate)})
 
 
 @candidates_api_bp.route("/results/<int:job_id>")

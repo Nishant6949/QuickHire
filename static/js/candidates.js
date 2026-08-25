@@ -171,6 +171,37 @@
         });
     }
 
+
+    function updateCandidateStatus(id, status) {
+        return fetch("/dashboard/candidate-status/" + id, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: status })
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data.success) throw new Error(data.error || "Could not update status");
+                var c = candidates.find(function (x) { return x.id === id; });
+                if (c) {
+                    c.status = data.candidate.status;
+                    c.status_html = data.candidate.status_html;
+                }
+                var row = els.tbody.querySelector('tr[data-id="' + id + '"]');
+                if (row) {
+                    row.dataset.status = data.candidate.status;
+                    var statusCell = row.querySelector('[data-role="candidate-status"]');
+                    if (statusCell) statusCell.innerHTML = data.candidate.status_html;
+                }
+                applyFilters();
+                openDetailModal(id);
+                if (window.toast) window.toast("Candidate status updated", "success");
+                return data;
+            })
+            .catch(function (err) {
+                if (window.toast) window.toast(err.message || "Could not update status", "error");
+            });
+    }
+
     function openDetailModal(id) {
         var c = candidates.find(function (x) { return x.id === id; });
         if (!c) return;
@@ -221,7 +252,15 @@
             buildBar("Education", c.education_score) +
             '</div>' +
             skillsHtml +
-            summaryHtml;
+            summaryHtml +
+            '<div class="candidate-detail-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:var(--spacing-lg);padding-top:var(--spacing-md);border-top:1px solid var(--color-border);">' +
+            '<a class="btn-outline" target="_blank" href="/dashboard/resume-pdf/' + c.id + '"><i data-feather="file-text"></i> View Resume</a>' +
+            '<a class="btn-outline" target="_blank" href="/dashboard/candidate-pdf/' + c.id + '"><i data-feather="download"></i> Report</a>' +
+            (c.status === "scored" ? '<button class="btn-primary detail-status-btn" data-status="shortlisted" data-id="' + c.id + '"><i data-feather="star"></i> Shortlist</button>' : '') +
+            (c.status === "shortlisted" ? '<button class="btn-primary detail-status-btn" data-status="invited" data-id="' + c.id + '"><i data-feather="mail"></i> Mark Invited</button>' : '') +
+            (c.status === "invited" ? '<button class="btn-primary detail-status-btn" data-status="interview_done" data-id="' + c.id + '"><i data-feather="check-circle"></i> Interview Done</button>' : '') +
+            (c.status === "interview_done" ? '<button class="btn-primary detail-status-btn" data-status="final_hired" data-id="' + c.id + '"><i data-feather="user-check"></i> Hire</button><button class="btn-outline detail-status-btn" data-status="final_rejected" data-id="' + c.id + '">Reject</button>' : '') +
+            '</div>';
 
         els.detailModal.style.display = "";
         if (window.feather) feather.replace();
@@ -235,7 +274,14 @@
         if (!els.detailModal) return;
         els.detailClose.addEventListener("click", closeDetailModal);
         els.detailModal.addEventListener("click", function (e) {
-            if (e.target === els.detailModal) closeDetailModal();
+            if (e.target === els.detailModal) {
+                closeDetailModal();
+                return;
+            }
+            var statusBtn = e.target.closest(".detail-status-btn");
+            if (statusBtn) {
+                updateCandidateStatus(parseInt(statusBtn.dataset.id), statusBtn.dataset.status);
+            }
         });
         document.addEventListener("keydown", function (e) {
             if (e.key === "Escape") {

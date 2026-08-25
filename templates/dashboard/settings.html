@@ -159,18 +159,28 @@
         <p>Manage who can access your QuickHire workspace</p>
         <div style="margin-top:var(--spacing-lg);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md);">
-                <span style="font-size:var(--font-size-sm);color:var(--color-text-low);">1 member</span>
+                <span id="team-count" style="font-size:var(--font-size-sm);color:var(--color-text-low);">{{ 1 + team_members|length }} member{{ '' if (1 + team_members|length) == 1 else 's' }}</span>
             </div>
             <div class="data-table-wrap">
                 <table>
-                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
-                    <tbody>
+                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="team-tbody">
                         <tr>
                             <td style="display:flex;align-items:center;gap:8px;"><div class="avatar-sm">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>{{ current_user.first_name }} {{ current_user.last_name }}</td>
                             <td>{{ current_user.work_email }}</td>
                             <td>Owner</td>
                             <td><span class="badge badge-active">Active</span></td>
+                            <td></td>
                         </tr>
+                        {% for member in team_members %}
+                        <tr data-team-id="{{ member.id }}">
+                            <td>{{ member.name }}</td>
+                            <td>{{ member.email }}</td>
+                            <td>{{ member.role }}</td>
+                            <td><span class="badge badge-draft">{{ member.status|capitalize }}</span></td>
+                            <td><button type="button" class="btn-outline-sm team-remove-btn" data-id="{{ member.id }}">Remove</button></td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -179,11 +189,14 @@
 
     <div class="settings-section" style="margin-top:var(--spacing-xl);">
         <h3>Invite Team Members</h3>
-        <p style="color:var(--color-text-low);font-size:var(--font-size-sm);">Team collaboration is coming soon. You'll be able to invite hiring managers, recruiters, and interviewers to your workspace.</p>
-        <div style="margin-top:var(--spacing-lg);padding:var(--spacing-xl);border:1px dashed var(--color-border, rgba(255,255,255,0.1));border-radius:var(--radius-lg);text-align:center;">
-            <i data-feather="users" style="width:32px;height:32px;color:var(--color-text-disabled);margin-bottom:var(--spacing-sm);"></i>
-            <p style="color:var(--color-text-disabled);font-size:var(--font-size-sm);margin:0;">Multi-user access coming in a future update</p>
+        <p style="color:var(--color-text-low);font-size:var(--font-size-sm);">Add recruiters, hiring managers, interviewers or viewers to your workspace roster.</p>
+        <div style="display:grid;grid-template-columns:1.2fr 1.4fr 1fr auto;gap:var(--spacing-sm);align-items:end;margin-top:var(--spacing-lg);">
+            <div class="form-group" style="margin:0;"><label for="team-name">Name</label><input id="team-name" class="settings-input" type="text" placeholder="Alex Morgan"></div>
+            <div class="form-group" style="margin:0;"><label for="team-email">Email</label><input id="team-email" class="settings-input" type="email" placeholder="alex@company.com"></div>
+            <div class="form-group" style="margin:0;"><label for="team-role">Role</label><select id="team-role" class="settings-input"><option>Recruiter</option><option>Hiring Manager</option><option>Interviewer</option><option>Viewer</option></select></div>
+            <button type="button" class="btn-primary" id="team-add-btn">Add Member</button>
         </div>
+        <p style="margin-top:var(--spacing-sm);color:var(--color-text-disabled);font-size:var(--font-size-xs);">This capstone build manages the workspace roster and invitation state. Authentication remains owner-controlled.</p>
     </div>
 </div>
 

@@ -1,4 +1,5 @@
 import logging
+import os
 import smtplib
 import secrets
 import hashlib
@@ -50,7 +51,10 @@ def consume_reset_token(token):
         return None
 
     email = reset_token.email
-    expired = datetime.now(timezone.utc) > reset_token.expires_at
+    expires_at = reset_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    expired = datetime.now(timezone.utc) > expires_at
 
     db.session.delete(reset_token)
     db.session.commit()
@@ -65,6 +69,9 @@ def send_password_reset_email(to_email, reset_link):
     gmail_addr = current_app.config.get("GMAIL_ADDRESS")
     gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
     if not gmail_addr or not gmail_pass:
+        if os.getenv("EMAIL_MODE", "console").lower() == "console":
+            logger.info("PASSWORD RESET PREVIEW -> %s | %s", to_email, reset_link)
+            return True
         logger.error("Gmail credentials not configured")
         return False
 

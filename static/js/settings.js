@@ -153,3 +153,65 @@ function closeAccount() {
             btn.textContent = 'Close Account';
         });
 }
+
+function updateTeamCount() {
+    const tbody = document.getElementById('team-tbody');
+    const count = tbody ? tbody.querySelectorAll('tr').length : 1;
+    const label = document.getElementById('team-count');
+    if (label) label.textContent = count + ' member' + (count === 1 ? '' : 's');
+}
+
+function bindTeamManagement() {
+    const addBtn = document.getElementById('team-add-btn');
+    const tbody = document.getElementById('team-tbody');
+    if (!addBtn || !tbody) return;
+
+    addBtn.addEventListener('click', () => {
+        const name = document.getElementById('team-name').value.trim();
+        const email = document.getElementById('team-email').value.trim();
+        const role = document.getElementById('team-role').value;
+        if (!name || !email) {
+            if (window.toast) window.toast('Enter a name and email', 'error');
+            return;
+        }
+        addBtn.disabled = true;
+        fetch('/dashboard/settings/team', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, role })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) throw new Error(data.error || 'Could not add team member');
+                const m = data.member;
+                const tr = document.createElement('tr');
+                tr.dataset.teamId = m.id;
+                tr.innerHTML = '<td>' + escapeHtml(m.name) + '</td><td>' + escapeHtml(m.email) + '</td><td>' + escapeHtml(m.role) + '</td><td><span class="badge badge-draft">Invited</span></td><td><button type="button" class="btn-outline-sm team-remove-btn" data-id="' + m.id + '">Remove</button></td>';
+                tbody.appendChild(tr);
+                document.getElementById('team-name').value = '';
+                document.getElementById('team-email').value = '';
+                updateTeamCount();
+                if (window.toast) window.toast('Team member added', 'success');
+            })
+            .catch(err => { if (window.toast) window.toast(err.message, 'error'); })
+            .finally(() => { addBtn.disabled = false; });
+    });
+
+    tbody.addEventListener('click', e => {
+        const btn = e.target.closest('.team-remove-btn');
+        if (!btn) return;
+        if (!confirm('Remove this team member?')) return;
+        fetch('/dashboard/settings/team/' + btn.dataset.id, { method: 'DELETE' })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) throw new Error(data.error || 'Could not remove team member');
+                const row = btn.closest('tr');
+                if (row) row.remove();
+                updateTeamCount();
+                if (window.toast) window.toast('Team member removed', 'success');
+            })
+            .catch(err => { if (window.toast) window.toast(err.message, 'error'); });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', bindTeamManagement);

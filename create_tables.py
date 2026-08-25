@@ -1,17 +1,11 @@
-"""One-time script to create database tables in Supabase."""
+"""Create any missing QuickHire database tables.
 
-import os
-import sys
-from dotenv import load_dotenv
-
-load_dotenv()
-
-if not os.getenv("DATABASE_URL"):
-    sys.exit("FATAL: DATABASE_URL environment variable is not set.")
-
+Uses DATABASE_URL when configured, otherwise the application's local SQLite
+fallback. Safe to run multiple times because SQLAlchemy create_all is idempotent.
+"""
 from main import app
-from user_model import db, User, Job, Candidate, ResetToken
+from user_model import db
 
 with app.app_context():
     db.create_all()
-    print("All tables created successfully.")
+    print('All QuickHire tables are ready.')
