@@ -1,0 +1,306 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block page_content %}
+<div id="wizard-container">
+    <div class="wizard-stepper">
+        <div class="wizard-step active" data-step="1">
+            <div class="wizard-step-circle">1</div>
+            <span class="wizard-step-label">Job Description</span>
+        </div>
+        <div class="wizard-step-connector"></div>
+        <div class="wizard-step" data-step="2">
+            <div class="wizard-step-circle">2</div>
+            <span class="wizard-step-label">Upload Resumes</span>
+        </div>
+        <div class="wizard-step-connector"></div>
+        <div class="wizard-step" data-step="3">
+            <div class="wizard-step-circle">3</div>
+            <span class="wizard-step-label">AI Ranking & Selection</span>
+        </div>
+        <div class="wizard-step-connector"></div>
+        <div class="wizard-step" data-step="4">
+            <div class="wizard-step-circle">4</div>
+            <span class="wizard-step-label">Onboarding</span>
+        </div>
+    </div>
+
+    <div class="wizard-panel active" id="step-1-panel">
+        <div class="card-panel">
+            <h2 class="wizard-panel-title">Upload Job Description</h2>
+            <p class="wizard-panel-subtitle">Upload a PDF or paste the job description text to get started</p>
+
+            <div class="jd-input-toggle">
+                <button class="jd-toggle-btn active" data-mode="upload" type="button">
+                    <i data-feather="upload-cloud"></i> Upload PDF
+                </button>
+                <button class="jd-toggle-btn" data-mode="paste" type="button">
+                    <i data-feather="edit-3"></i> Paste Text
+                </button>
+            </div>
+
+            <div class="jd-upload-area" id="jd-upload-area">
+                <div class="drop-zone" id="jd-drop-zone">
+                    <i data-feather="upload-cloud" class="drop-icon"></i>
+                    <h3 class="drop-header">Drag & drop your file here</h3>
+                    <p class="drop-subtext">Supports PDF files up to 16MB</p>
+                    <button class="btn-outline" type="button" id="jd-browse-btn">Browse Files</button>
+                    <input type="file" id="jd-file-input" accept=".pdf" style="display:none;">
+                </div>
+                <div class="jd-file-preview" id="jd-file-preview" style="display:none;">
+                    <i data-feather="file-text"></i>
+                    <span class="jd-file-name" id="jd-file-name"></span>
+                    <button class="jd-file-remove" id="jd-file-remove" type="button" aria-label="Remove file">
+                        <i data-feather="x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="jd-paste-area" id="jd-paste-area" style="display:none;">
+                <div class="form-group">
+                    <textarea id="jd-textarea" rows="10" placeholder="Paste your job description here..."></textarea>
+                </div>
+            </div>
+
+            <div class="jd-analyzing" id="jd-analyzing" style="display:none;">
+                <div class="processing-state">
+                    <div class="processing-content">
+                        <div class="loader"></div>
+                        <p class="processing-text">Analyzing job description with AI...</p>
+                        <p class="processing-subtext">Extracting title, skills, and requirements</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-summary" id="jd-analysis-result" style="display:none;">
+                <div class="analysis-header">
+                    <i data-feather="check-circle"></i>
+                    <span>JD Analysis Complete</span>
+                </div>
+                <div class="analysis-fields" id="analysis-fields"></div>
+                <div class="analysis-skills" id="analysis-skills-wrap" style="display:none;">
+                    <span class="analysis-field-label">Key Skills</span>
+                    <div class="analysis-skills-list" id="analysis-skills-list"></div>
+                </div>
+                <button class="btn-primary analysis-continue-btn" id="analysis-continue-btn" type="button">
+                    Continue to Resume Upload <i data-feather="arrow-right"></i>
+                </button>
+            </div>
+
+            <div class="wizard-nav" id="jd-wizard-nav">
+                <div></div>
+                <button class="btn-primary" id="jd-next-btn" disabled type="button">
+                    Next <i data-feather="arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-panel" id="step-2-panel">
+        <div class="card-panel">
+            <h2 class="wizard-panel-title">Upload Applicant Resumes</h2>
+            <p class="wizard-panel-subtitle">Upload one or more PDF resumes to screen against the job description</p>
+
+            <div class="drop-zone" id="resume-drop-zone">
+                <i data-feather="users" class="drop-icon"></i>
+                <h3 class="drop-header">Drag & drop resumes here</h3>
+                <p class="drop-subtext">Supports multiple PDF files up to 16MB each</p>
+                <button class="btn-outline" type="button" id="resume-browse-btn">Browse Files</button>
+                <input type="file" id="resume-file-input" accept=".pdf" multiple style="display:none;">
+            </div>
+
+            <div class="resume-list" id="resume-list" style="display:none;">
+                <div class="resume-list-header">
+                    <span class="resume-count" id="resume-count">0 resumes uploaded</span>
+                    <button class="btn-outline-sm" type="button" id="add-more-btn">
+                        <i data-feather="plus"></i> Add More
+                    </button>
+                </div>
+                <div class="resume-items" id="resume-items"></div>
+            </div>
+
+            <div class="wizard-nav">
+                <button class="btn-outline" id="resume-back-btn" type="button">
+                    <i data-feather="arrow-left"></i> Back
+                </button>
+                <button class="btn-primary" id="start-screening-btn" disabled type="button">
+                    Next <i data-feather="arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-panel" id="step-3-panel">
+        <div class="card-panel">
+            <div class="screening-loading" id="screening-loading">
+                <div class="processing-state screening-processing">
+                    <div class="processing-content">
+                        <div class="loader"></div>
+                        <p class="processing-text">Analyzing resumes with AI...</p>
+                        <p class="processing-subtext" id="screening-resume-count"></p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="screening-progress-fill"></div>
+                        </div>
+                        <span class="progress-percent" id="screening-progress-percent">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screening-results" id="screening-results" style="display:none;">
+                <div class="results-header">
+                    <div>
+                        <h2 class="wizard-panel-title">AI Ranking & Selection</h2>
+                        <p class="wizard-panel-subtitle">Select candidates to invite for interviews or export reports</p>
+                    </div>
+                    <div class="selection-checkbox-wrap">
+                        <label class="selection-checkbox-label">
+                            <input type="checkbox" id="select-all-checkbox">
+                            <span>Select All</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="selection-bar" id="selection-bar" style="display:none;">
+                    <span class="selection-count" id="selection-count">0 selected</span>
+                    <div class="selection-actions">
+                        <button class="btn-outline btn-sm" id="export-pdf-btn" type="button">
+                            <i data-feather="download"></i> Export PDF
+                        </button>
+                        <button class="btn-primary btn-sm" id="send-invite-btn" type="button">
+                            <i data-feather="mail"></i> Send Interview Invite
+                        </button>
+                    </div>
+                </div>
+                <div class="results-controls">
+                    <div class="results-sort">
+                        <label for="sort-select">Sort by</label>
+                        <select id="sort-select">
+                            <option value="match_score">Overall Score</option>
+                            <option value="skills_score">Skills</option>
+                            <option value="experience_score">Experience</option>
+                            <option value="education_score">Education</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="skill-filter" id="skill-filter" style="display:none;">
+                    <span class="skill-filter-label">Filter by skill</span>
+                    <div class="skill-filter-pills" id="skill-filter-pills"></div>
+                </div>
+                <div class="results-grid" id="results-grid"></div>
+                <div class="wizard-nav">
+                    <button class="btn-outline" id="results-back-btn" type="button">
+                        <i data-feather="arrow-left"></i> New Screening
+                    </button>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-panel" id="step-4-panel">
+        <div class="card-panel">
+            <div class="step4-header">
+                <div>
+                    <h2 class="wizard-panel-title">Post-Interview & Onboarding</h2>
+                    <p class="wizard-panel-subtitle">Track interview outcomes and generate onboarding documents</p>
+                </div>
+            </div>
+            <div class="step4-status-groups" id="step4-status-groups"></div>
+            <div class="wizard-nav">
+                <button class="btn-outline" id="step4-back-btn" type="button">
+                    <i data-feather="arrow-left"></i> Back to Results
+                </button>
+                <div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="invite-modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Send Interview Invite</h3>
+            <button class="modal-close" id="invite-modal-close" type="button" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="invite-scheduling-link">Scheduling link (Calendly, SavvyCal, etc.)</label>
+                <input type="url" id="invite-scheduling-link" value="https://calendly.com/dahalaatmik/30min" placeholder="https://calendly.com/your-link">
+                <small style="display:block;margin-top:4px;color:var(--color-text-disabled);font-size:var(--font-size-xs);">
+                    Optional. If provided, candidates will choose a time that works for them via this link.
+                </small>
+            </div>
+            <div class="form-group">
+                <label for="invite-message">Custom Message (optional)</label>
+                <textarea id="invite-message" rows="3" placeholder="Add a personal note to the invite..."
+                    data-default="Congratulations – you've been selected to move forward in our interview process for this role.&#10;&#10;As the next step, please use the scheduling link below to choose an interview time that works best for you. Once you've selected a slot, you'll receive a calendar invite with all the details.&#10;&#10;If you have any questions or need to reschedule later, feel free to reply directly to this email.&#10;&#10;Best regards,&#10;The Hiring Team&#10;QuickHire"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" id="invite-cancel-btn" type="button">Cancel</button>
+            <button class="btn-primary" id="invite-submit-btn" type="button">
+                <i data-feather="send"></i> Send Invites
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="resume-preview-modal" style="display:none;">
+    <div class="modal-content modal-content--wide">
+        <div class="modal-header">
+            <h3 id="resume-preview-name">Resume Preview</h3>
+            <button class="modal-close" id="resume-preview-close" type="button" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body modal-body--pdf">
+            <iframe id="resume-preview-iframe" class="resume-preview-iframe"></iframe>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="final-decision-modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="final-decision-title">Final Decision</h3>
+            <button class="modal-close" id="final-decision-close" type="button" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="final-decision-id">
+            <input type="hidden" id="final-decision-type">
+            <div class="form-group">
+                <label for="final-decision-notes">Notes (optional)</label>
+                <textarea id="final-decision-notes" rows="3" placeholder="Add notes about this decision..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" id="final-decision-cancel" type="button">Cancel</button>
+            <button class="btn-primary" id="final-decision-submit" type="button">Confirm</button>
+        </div>
+    </div>
+</div>
+
+{% if draft_job %}
+<script>
+    window.__draftJob = {
+        id: {{ draft_job.id }},
+        status: "{{ draft_job.status }}",
+        jdFilename: {{ draft_job.jd_filename | tojson }},
+        candidates: [
+            {% for c in draft_job.candidates %}
+            {id: {{ c.id }}, filename: "{{ c.resume_filename }}", candidateName: {{ c.candidate_name | tojson }}, candidateEmail: {{ (c.candidate_email or "") | tojson }}, matchScore: {{ c.match_score | default(0, true) }}, skillsScore: {{ c.skills_score | default(0, true) }}, experienceScore: {{ c.experience_score | default(0, true) }}, educationScore: {{ c.education_score | default(0, true) }}, matchedSkills: {{ (c.matched_skills or "[]") | safe }}, matchSummary: {{ c.match_summary | tojson }}, status: "{{ c.status }}"}{{ "," if not loop.last }}
+            {% endfor %}
+        ]
+    };
+</script>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

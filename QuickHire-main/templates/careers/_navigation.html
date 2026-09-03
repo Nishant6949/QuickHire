@@ -1,0 +1,50 @@
+{#
+    Shared Careers Portal navigation.
+
+    The links change depending on who is signed in:
+    - Employer: return to the employer dashboard without signing in again.
+    - Applicant: show applicant workspace links.
+    - Guest: show links to each portal.
+
+    Using one shared file keeps every Careers page consistent.
+#}
+<header class="career-nav">
+    <a class="brand" href="{{ url_for('landing.index') }}">QuickHire</a>
+
+    <nav aria-label="Careers navigation">
+        <a
+            href="{{ url_for('careers.jobs') }}"
+            class="{% if active_page == 'jobs' %}active{% endif %}"
+        >
+            Find Jobs
+        </a>
+
+        {# Employer navigation #}
+        {% if current_user.is_authenticated %}
+            <a class="nav-dashboard" href="{{ url_for('dashboard_bp.dashboard') }}">
+             Dashboard
+            </a>
+
+        {# Applicant navigation #}
+        {% elif session.get('candidate_account_id') %}
+            <a
+                href="{{ url_for('candidate_auth.dashboard') }}"
+                class="{% if active_page == 'applicant_dashboard' %}active{% endif %}"
+            >
+                My Applications
+            </a>
+            <a
+                href="{{ url_for('candidate_auth.profile') }}"
+                class="{% if active_page == 'profile' %}active{% endif %}"
+            >
+                Profile
+            </a>
+            <a href="{{ url_for('candidate_auth.logout') }}">Sign Out</a>
+
+        {# Public visitor navigation #}
+        {% else %}
+            <a href="{{ url_for('candidate_auth.login') }}">Applicant Portal</a>
+            <a href="{{ url_for('auth.login') }}">Employer Portal</a>
+        {% endif %}
+    </nav>
+</header>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Find Jobs | QuickHire</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/careers.css') }}">
+</head>
+<body>
+{% set active_page = 'jobs' %}
+{% include 'careers/_navigation.html' %}
+
+<main>
+    <section class="hero">
+        <span class="eyebrow">QUICKHIRE CAREERS</span>
+        <h1>Find your next opportunity.</h1>
+        <p>Browse active vacancies from employers using QuickHire and apply directly with your PDF resume.</p>
+        <form class="search" method="get">
+            <label>
+                <span>Role, skill or company</span>
+                <input name="q" value="{{ q }}" placeholder="e.g. Cloud Support Engineer">
+            </label>
+            <label>
+                <span>Location</span>
+                <input name="location" value="{{ location }}" placeholder="e.g. Sydney">
+            </label>
+            <button type="submit">Search jobs</button>
+        </form>
+    </section>
+
+    <section class="jobs-section">
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">OPEN POSITIONS</span>
+                <h2>{{ jobs|length }} job{% if jobs|length != 1 %}s{% endif %} available</h2>
+            </div>
+            {% if q or location %}<a class="clear" href="{{ url_for('careers.jobs') }}">Clear filters</a>{% endif %}
+        </div>
+
+        {% if jobs %}
+        <div class="job-grid">
+            {% for job in jobs %}
+            <article class="job-card">
+                <div class="job-card-top">
+                    <div class="company-mark">{{ job.company[:1]|upper }}</div>
+                    <span class="posted">Posted {{ job.created_at.strftime('%d %b %Y') }}</span>
+                </div>
+                <p class="company">{{ job.company }}</p>
+                <h3>{{ job.title }}</h3>
+                <div class="meta">
+                    <span>{{ job.location }}</span>
+                    <span>{{ job.department }}</span>
+                    <span>{{ job.employment_type }}</span>
+                </div>
+                {% if job.skills %}
+                <div class="skills">
+                    {% for skill in job.skills[:4] %}<span>{{ skill }}</span>{% endfor %}
+                </div>
+                {% endif %}
+                {% if job.application_deadline %}<div class="deadline-line">Applications close <strong>{{ job.application_deadline.strftime('%d %b %Y') }}</strong></div>{% endif %}
+                <div class="job-card-bottom">
+                    <strong>{{ job.salary if job.salary and job.salary != 'Not specified' else 'Salary not listed' }}</strong>
+                    <div class="job-actions"><a class="button" href="{{ url_for('careers.job_detail', job_id=job.id) }}">View & apply →</a>{% if session.get('candidate_account_id') %}<form method="post" action="{{ url_for('candidate_auth.toggle_saved_job', job_id=job.id) }}"><button class="save-job-btn" type="submit" title="Save job">♡</button></form>{% endif %}</div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">
+            <div class="empty-icon">⌕</div>
+            <h3>No matching jobs found</h3>
+            <p>Try a different title, skill or location.</p>
+            <a class="button" href="{{ url_for('careers.jobs') }}">View all jobs</a>
+        </div>
+        {% endif %}
+    </section>
+</main>
+
+<footer>QuickHire Applicant Portal · Applications go directly to the recruiting team.</footer>
+</body>
+</html>

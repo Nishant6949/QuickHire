@@ -1,0 +1,305 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Settings{% endblock %}
+{% block breadcrumb %}Settings{% endblock %}
+{% block topbar_actions %}
+<button class="icon-btn"><i data-feather="bell"></i></button>
+{% endblock %}
+
+{% block page_content %}
+<h1 style="font-size:var(--font-size-3xl);font-weight:700;color:var(--color-text-high);margin-bottom:var(--spacing-xs);">Settings</h1>
+<p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-2xl);">Manage your QuickHire workspace preferences and configurations</p>
+
+<!-- Tabs -->
+<div class="tab-nav">
+    <button class="tab-btn active" data-tab="general">General</button>
+    <button class="tab-btn" data-tab="notifications">Notifications</button>
+    <button class="tab-btn" data-tab="team">Team & Access</button>
+    <button class="tab-btn" data-tab="billing">Billing</button>
+    <button class="tab-btn" data-tab="account">Account & Data</button>
+</div>
+
+<!-- General Tab -->
+<div class="tab-panel active" data-panel="general">
+    <div class="settings-section">
+        <h3>Workspace Details</h3>
+        <p>Update your organization name and basic information</p>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Organization Name</h4>
+                <p>This appears in emails and dashboards</p>
+            </div>
+            <input type="text" class="settings-input" value="{{ current_user.company_name }}" id="org-name">
+        </div>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Industry</h4>
+                <p>Helps us customize features</p>
+            </div>
+            <select class="settings-input" id="industry">
+                <option>Technology</option>
+                <option>Finance</option>
+                <option>Healthcare</option>
+                <option>Education</option>
+                <option>Retail</option>
+            </select>
+        </div>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Company Size</h4>
+                <p>Number of employees</p>
+            </div>
+            <select class="settings-input" id="company-size">
+                {% set sizes = ['1-10', '11-50', '51-200', '201-1000', '1000+'] %}
+                {% for size in sizes %}
+                <option{% if current_user.company_size == size %} selected{% endif %}>{{ size }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="settings-section">
+        <h3>AI Screening Preferences</h3>
+        <p>Control how the AI evaluates candidates</p>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Auto-Screen New Applicants</h4>
+                <p>Automatically run AI matching on new applications</p>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="auto-screen"{{ ' checked' if current_user.auto_screen }}>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Minimum Match Threshold</h4>
+                <p>Only show candidates above this score</p>
+            </div>
+            <select class="settings-input" id="match-threshold">
+                {% set thresholds = [10, 20, 30, 40, 50, 60, 70, 80, 90] %}
+                {% for t in thresholds %}
+                <option value="{{ t }}"{% if current_user.match_threshold == t %} selected{% endif %}>{{ t }}%</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Bias Detection</h4>
+                <p>Flag potentially biased language in job descriptions</p>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="bias-detect"{{ ' checked' if current_user.bias_detection }}>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:var(--spacing-lg);">
+        <button class="btn-primary" onclick="saveSettings()">Save Changes</button>
+    </div>
+</div>
+
+<!-- Notifications Tab -->
+<div class="tab-panel" data-panel="notifications">
+    <div class="settings-section">
+        <h3>Email Notifications</h3>
+        <p>Choose which emails you receive from QuickHire</p>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>New Applicant Matches</h4>
+                <p>When a high-match candidate is screened above your threshold</p>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="notif-matches"{{ ' checked' if current_user.notif_matches }}>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Weekly Summary</h4>
+                <p>Digest of hiring activity every Monday</p>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="notif-weekly"{{ ' checked' if current_user.notif_weekly }}>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Job Posting Expirations</h4>
+                <p>Reminders when jobs are closing soon</p>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="notif-expire"{{ ' checked' if current_user.notif_expire }}>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-row">
+            <div class="settings-row-left">
+                <h4>Product Updates</h4>
+                <p>New features and platform updates</p>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="notif-updates"{{ ' checked' if current_user.notif_updates }}>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:var(--spacing-lg);">
+        <button class="btn-primary" onclick="saveNotifications()">Save Changes</button>
+    </div>
+</div>
+
+<!-- Team Tab -->
+<div class="tab-panel" data-panel="team">
+    <div class="settings-section">
+        <h3>Team Members</h3>
+        <p>Manage who can access your QuickHire workspace</p>
+        <div style="margin-top:var(--spacing-lg);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md);">
+                <span id="team-count" style="font-size:var(--font-size-sm);color:var(--color-text-low);">{{ 1 + team_members|length }} member{{ '' if (1 + team_members|length) == 1 else 's' }}</span>
+            </div>
+            <div class="data-table-wrap">
+                <table>
+                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="team-tbody">
+                        <tr>
+                            <td style="display:flex;align-items:center;gap:8px;"><div class="avatar-sm">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>{{ current_user.first_name }} {{ current_user.last_name }}</td>
+                            <td>{{ current_user.work_email }}</td>
+                            <td>Owner</td>
+                            <td><span class="badge badge-active">Active</span></td>
+                            <td></td>
+                        </tr>
+                        {% for member in team_members %}
+                        <tr data-team-id="{{ member.id }}">
+                            <td>{{ member.name }}</td>
+                            <td>{{ member.email }}</td>
+                            <td>{{ member.role }}</td>
+                            <td><span class="badge badge-draft">{{ member.status|capitalize }}</span></td>
+                            <td><button type="button" class="btn-outline-sm team-remove-btn" data-id="{{ member.id }}">Remove</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-section" style="margin-top:var(--spacing-xl);">
+        <h3>Invite Team Members</h3>
+        <p style="color:var(--color-text-low);font-size:var(--font-size-sm);">Add recruiters, hiring managers, interviewers or viewers to your workspace roster.</p>
+        <div style="display:grid;grid-template-columns:1.2fr 1.4fr 1fr auto;gap:var(--spacing-sm);align-items:end;margin-top:var(--spacing-lg);">
+            <div class="form-group" style="margin:0;"><label for="team-name">Name</label><input id="team-name" class="settings-input" type="text" placeholder="Alex Morgan"></div>
+            <div class="form-group" style="margin:0;"><label for="team-email">Email</label><input id="team-email" class="settings-input" type="email" placeholder="alex@company.com"></div>
+            <div class="form-group" style="margin:0;"><label for="team-role">Role</label><select id="team-role" class="settings-input"><option>Employer</option><option>Hiring Manager</option><option>Interviewer</option><option>Viewer</option></select></div>
+            <button type="button" class="btn-primary" id="team-add-btn">Add Member</button>
+        </div>
+        <p style="margin-top:var(--spacing-sm);color:var(--color-text-disabled);font-size:var(--font-size-xs);">This capstone build manages the workspace roster and invitation state. Authentication remains owner-controlled.</p>
+    </div>
+</div>
+
+<!-- Billing Tab -->
+<div class="tab-panel" data-panel="billing">
+    <div class="settings-section">
+        <h3>Current Plan</h3>
+        <p>Your active subscription</p>
+        <div class="card-panel" style="background:linear-gradient(135deg,var(--color-surface),var(--color-elevated));border:1px solid rgba(102,252,241,0.15);">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:var(--spacing-sm);margin-bottom:4px;">
+                        <h3 style="font-size:var(--font-size-xl);color:var(--color-text-high);margin:0;">Early Access</h3>
+                        <span class="badge badge-active" style="font-size:var(--font-size-xs);">Free</span>
+                    </div>
+                    <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);">Full access while in early access period</p>
+                    <ul style="margin-top:var(--spacing-md);font-size:var(--font-size-sm);color:var(--color-text-low);line-height:1.8;">
+                        <li>&#10003; Unlimited job postings</li>
+                        <li>&#10003; AI-powered candidate screening</li>
+                        <li>&#10003; Analytics dashboard</li>
+                        <li>&#10003; Email invitations & decisions</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-section" style="margin-top:var(--spacing-xl);">
+        <h3>Upcoming Plans</h3>
+        <p style="color:var(--color-text-low);font-size:var(--font-size-sm);">Paid plans with expanded limits and team features will be available when QuickHire launches publicly. Early access users will be notified before any billing begins.</p>
+        <div style="margin-top:var(--spacing-lg);display:flex;gap:var(--spacing-lg);flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;padding:var(--spacing-lg);border:1px solid var(--color-border, rgba(255,255,255,0.1));border-radius:var(--radius-lg);">
+                <h4 style="color:var(--color-text-high);margin-bottom:var(--spacing-xs);">Starter</h4>
+                <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-sm);">For small teams getting started</p>
+                <p style="font-size:var(--font-size-lg);font-weight:700;color:var(--color-text-high);">TBD</p>
+            </div>
+            <div style="flex:1;min-width:200px;padding:var(--spacing-lg);border:1px solid rgba(102,252,241,0.25);border-radius:var(--radius-lg);">
+                <h4 style="color:var(--color-text-high);margin-bottom:var(--spacing-xs);">Professional</h4>
+                <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-sm);">For growing hiring teams</p>
+                <p style="font-size:var(--font-size-lg);font-weight:700;color:var(--color-text-high);">TBD</p>
+            </div>
+            <div style="flex:1;min-width:200px;padding:var(--spacing-lg);border:1px solid var(--color-border, rgba(255,255,255,0.1));border-radius:var(--radius-lg);">
+                <h4 style="color:var(--color-text-high);margin-bottom:var(--spacing-xs);">Enterprise</h4>
+                <p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-sm);">Custom solutions at scale</p>
+                <p style="font-size:var(--font-size-lg);font-weight:700;color:var(--color-text-high);">Contact us</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account & Data Tab -->
+<div class="tab-panel" data-panel="account">
+    <div class="settings-section">
+        <h3 style="color:var(--color-danger, #ef4444);">Delete All Data</h3>
+        <p>Permanently delete all your job postings, candidates, and uploaded files. Your account will remain active but all data will be wiped. This action cannot be undone.</p>
+        <div style="margin-top:var(--spacing-lg);">
+            <button class="btn-danger-solid" onclick="showDeleteDataModal()">Delete All Data</button>
+        </div>
+    </div>
+
+    <div class="settings-section" style="margin-top:var(--spacing-2xl);">
+        <h3 style="color:var(--color-danger, #ef4444);">Close Account</h3>
+        <p>Permanently delete your account and all associated data. You will be logged out and will not be able to recover your account.</p>
+        <div style="margin-top:var(--spacing-lg);">
+            <button class="btn-danger-solid" onclick="showCloseAccountModal()">Close Account</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Data Confirmation Modal -->
+<div class="modal-overlay" id="delete-data-modal" style="display:none;">
+    <div class="modal-content" style="max-width:480px;">
+        <h3 style="color:var(--color-text-high);margin-bottom:var(--spacing-sm);">Delete All Data</h3>
+        <p style="color:var(--color-text-low);font-size:var(--font-size-sm);margin-bottom:var(--spacing-lg);">
+            This will permanently delete all your job postings, candidates, and files. Type your company name <strong style="color:var(--color-text-high);">{{ current_user.company_name }}</strong> to confirm.
+        </p>
+        <input type="text" class="settings-input" id="delete-data-confirm" placeholder="Type company name..." style="width:100%;margin-bottom:var(--spacing-lg);">
+        <div style="display:flex;gap:var(--spacing-md);justify-content:flex-end;">
+            <button class="btn-outline" onclick="hideModal('delete-data-modal')">Cancel</button>
+            <button class="btn-danger-solid" id="delete-data-btn" onclick="deleteAllData()">Delete All Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- Close Account Confirmation Modal -->
+<div class="modal-overlay" id="close-account-modal" style="display:none;">
+    <div class="modal-content" style="max-width:480px;">
+        <h3 style="color:var(--color-text-high);margin-bottom:var(--spacing-sm);">Close Account</h3>
+        <p style="color:var(--color-text-low);font-size:var(--font-size-sm);margin-bottom:var(--spacing-lg);">
+            This will permanently delete your account and all data. This cannot be undone. Type <strong style="color:var(--color-text-high);">DELETE</strong> to confirm.
+        </p>
+        <input type="text" class="settings-input" id="close-account-confirm" placeholder='Type "DELETE"...' style="width:100%;margin-bottom:var(--spacing-lg);">
+        <div style="display:flex;gap:var(--spacing-md);justify-content:flex-end;">
+            <button class="btn-outline" onclick="hideModal('close-account-modal')">Cancel</button>
+            <button class="btn-danger-solid" id="close-account-btn" onclick="closeAccount()">Close Account</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const COMPANY_NAME = {{ current_user.company_name | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

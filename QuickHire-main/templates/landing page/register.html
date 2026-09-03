@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Started - QuickHire</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+    <a href="{{ url_for('landing.index') }}" class="auth-brand">QuickHire</a>
+
+    <div class="auth-container">
+        <div class="auth-card register-card">
+            <div class="auth-form active">
+                <h2 class="auth-header">Get Started</h2>
+                <p class="auth-subheader">Join companies hiring smarter with AI</p>
+                <form id="register-form-element" action = "{{ url_for('auth.register')}}" method="POST">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first-name">First Name</label>
+                            <input type="text" name = "first-name"id="first-name" placeholder="John" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="last-name">Last Name</label>
+                            <input type="text" name = "last-name" id="last-name" placeholder="Doe" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="work-email">Work Email</label>
+                            <input type="email" name = "work-email" id="work-email" placeholder="john@company.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Mobile Number</label>
+                            <input type="tel" name="phone" id="phone" placeholder="+61 4XX XXX XXX">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="company-name">Company Name</label>
+                            <input type="text" name = "company-name" id="company-name" placeholder="Your Company Inc." required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="company-size">Company Size</label>
+                            <select name = "company-size" id="company-size" required>
+                                <option value="">Select size</option>
+                                <option value="1-10">1-10 employees</option>
+                                <option value="11-50">11-50 employees</option>
+                                <option value="51-200">51-200 employees</option>
+                                <option value="201-500">201-500 employees</option>
+                                <option value="501+">501+ employees</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="role">Your Role</label>
+                            <select name = "role" id="role" required>
+                                <option value="">Select role</option>
+                                <option value="hr">HR Manager</option>
+                                <option value="recruiter">Employer</option>
+                                <option value="founder">Founder/CEO</option>
+                                <option value="hiring">Hiring Manager</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Create Password</label>
+                            <div class="password-wrapper" id="password-wrapper">
+                                <input type="password" name = "password" id="password" placeholder="Minimum 8 characters" required>
+                                <button type="button" class="password-toggle" id="password-toggle" aria-label="Toggle password visibility" tabindex="-1">
+                                    <i data-feather="eye" class="icon-visible" aria-hidden="true"></i>
+                                    <i data-feather="eye-off" class="icon-hidden" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm Password</label>
+                            <div class="password-wrapper" id="confirm-password-wrapper">
+                                <input type="password" name = "confirm-password" id="confirm-password" placeholder="Re-enter password" required>
+                                <button type="button" class="password-toggle" id="confirm-password-toggle" aria-label="Toggle confirm password visibility" tabindex="-1">
+                                    <i data-feather="eye" class="icon-visible" aria-hidden="true"></i>
+                                    <i data-feather="eye-off" class="icon-hidden" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name = "terms" id="terms" required>
+                            <span>I agree to the <a href="#terms">Terms of Service</a> and <a href="#privacy">Privacy Policy</a></span>
+                        </label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name = "newsletter" id="newsletter">
+                            <span>Send me product updates and hiring tips</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-primary btn-full" id="register-btn">
+                        <span id="register-text">Create Free Account</span>
+                        <span id="register-spinner" class="spinner" style="display: none;"></span>
+                    </button>
+                    <p class="auth-switch">Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a></p>
+                </form>
+            </div>
+            <a href="{{ url_for('landing.index') }}" class="back-btn">
+                <i data-feather="arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+</body>
+</html>

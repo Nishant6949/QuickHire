@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#070809">
+    <meta name="description" content="QuickHire - AI-native hiring. Cuts hiring time by 80%. Bias-free. Instant. Precise.">
+    <title>QuickHire - Scale Your Team, Not Your Workload</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+    {% include 'landing page/_header.html' %}
+
+    <section class="hero">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <h1 class="hero-headline">We help Businesses scale, Quicker.</h1>
+                <p class="hero-subheadline">
+                    <span class="hero-subheadline-main">Cuts hiring time by 80%.</span>
+                    <span class="hero-subheadline-support">Bias-free. Instant. Precise.</span>
+                </p>
+                <div class="hero-actions" aria-label="QuickHire account options">
+                    <a href="{{ url_for('careers.jobs') }}" class="hero-job-button">
+                        <span class="hero-job-icon">⌕</span>
+                        <span><strong>Find Jobs</strong><small>Browse vacancies & apply</small></span>
+                    </a>
+                    <a href="{{ url_for('candidate_auth.register') }}" class="hero-candidate-button">Create Applicant Account</a>
+                </div>
+                <p class="hero-recruiter-link">Hiring? <a href="{{ url_for('auth.login') }}">Employer sign in</a> or <a href="{{ url_for('auth.register') }}">create Employer account</a>.</p>
+            </div>
+            <div class="hero-proof">
+                <div class="dashboard-mockup">
+                    <div class="mockup-sidebar">
+                        <div class="mockup-logo">QH</div>
+                        <div class="mockup-nav-item"></div>
+                        <div class="mockup-nav-item"></div>
+                        <div class="mockup-nav-item active"></div>
+                        <div class="mockup-user">
+                            <div class="mockup-avatar">JD</div>
+                            <div class="mockup-user-info"></div>
+                        </div>
+                    </div>
+                    <div class="mockup-main">
+                        <div class="mockup-bar"></div>
+                        <div class="mockup-cards">
+                            <div class="mockup-card"></div>
+                            <div class="mockup-card"></div>
+                            <div class="mockup-card"></div>
+                        </div>
+                        <div class="mockup-table">
+                            <div class="mockup-row"></div>
+                            <div class="mockup-row"></div>
+                            <div class="mockup-row"></div>
+                            <div class="mockup-row"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--
+        <hr class="section-divider" aria-hidden="true">
+        <div class="hero-social-proof-center">
+            <p class="social-proof-header">Integrations</p>
+            <div class="integrations-scroll-wrapper">
+                <div class="integrations-scroll-track" aria-hidden="true">
+                    <div class="integrations-set">
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
+                        </span>
+                    </div>
+                    <div class="integrations-set" aria-hidden="true">
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
+                        </span>
+                    </div>
+                    <div class="integrations-set" aria-hidden="true">
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
+                        </span>
+                    </div>
+                    <div class="integrations-set" aria-hidden="true">
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
+                        </span>
+                    </div>
+                    <div class="integrations-set" aria-hidden="true">
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
+                        </span>
+                    </div>
+                    <div class="integrations-set" aria-hidden="true">
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
+                        </span>
+                        <span class="company-logo company-logo-integration">
+                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr class="section-divider" aria-hidden="true">
+    </section>
+-->
+    <section id="features" class="features-section">
+        <div class="features-wrapper">
+            <div class="features-content">
+                <h2 class="features-headline">AI-native hiring, built to scale.</h2>
+                <p class="features-description">Smarter resume screening. Fairer hiring. Real-time insights. All powered by AI. All in one place.</p>
+            </div>
+            <div class="features-carousel-wrap">
+                <div class="features-carousel">
+                    <div class="features-track">
+                        <div class="feature-card">
+                            <i data-feather="file-text" class="feature-card-icon"></i>
+                            <h3 class="feature-card-title">Instant Resume Parsing</h3>
+                            <p class="feature-card-subtitle">Extract skills & experience in seconds</p>
+                        </div>
+                        <div class="feature-card">
+                            <i data-feather="bar-chart-2" class="feature-card-icon"></i>
+                            <h3 class="feature-card-title">Context Aware Ranking</h3>
+                            <p class="feature-card-subtitle">Semantic match to your job description</p>
+                        </div>
+                        <div class="feature-card">
+                            <i data-feather="user-x" class="feature-card-icon"></i>
+                            <h3 class="feature-card-title">Bias-Free Evaluation</h3>
+                            <p class="feature-card-subtitle">Hire on merit, not background</p>
+                        </div>
+                        <div class="feature-card">
+                            <i data-feather="zap" class="feature-card-icon"></i>
+                            <h3 class="feature-card-title">Smart Skill Matching</h3>
+                            <p class="feature-card-subtitle">Transferable skills & related tech</p>
+                        </div>
+                        <div class="feature-card">
+                            <i data-feather="calendar" class="feature-card-icon"></i>
+                            <h3 class="feature-card-title">Interview Scheduling</h3>
+                            <p class="feature-card-subtitle">One platform, end-to-end</p>
+                        </div>
+                        <div class="feature-card">
+                            <i data-feather="activity" class="feature-card-icon"></i>
+                            <h3 class="feature-card-title">Real-Time Analytics</h3>
+                            <p class="feature-card-subtitle">Pipeline & performance at a glance</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="team" class="team-section">
+        <div class="container">
+            <p class="team-label">FOUNDING TEAM</p>
+            <h2 class="section-title">Meet the Team</h2>
+            <div class="team-grid">
+                <div class="team-card">
+                    <div class="avatar">AD</div>
+                    <h3 class="member-name">Aatmik Dahal</h3>
+                    <p class="member-role">Lead Architect</p>
+                </div>
+                <div class="team-card">
+                    <div class="avatar">NK</div>
+                    <h3 class="member-name">Nishant Khadka</h3>
+                    <p class="member-role">Product Strategy</p>
+                </div>
+                <div class="team-card">
+                    <div class="avatar">NG</div>
+                    <h3 class="member-name">Nischal Gautam</h3>
+                    <p class="member-role">Security & Performance</p>
+                </div>
+                <div class="team-card">
+                    <div class="avatar">US</div>
+                    <h3 class="member-name">Upadesh Silwal</h3>
+                    <p class="member-role">UI/UX & Roadmap</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% include 'landing page/_footer.html' %}
+
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+</body>
+</html>

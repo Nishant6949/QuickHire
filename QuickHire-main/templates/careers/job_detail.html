@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>{{ card.title }} | QuickHire Careers</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/careers.css') }}">
+</head>
+<body>
+{% set active_page = 'jobs' %}
+{% include 'careers/_navigation.html' %}
+
+<main class="detail-wrap">
+    <section class="job-detail">
+        <span class="eyebrow">{{ card.company }}</span>
+        <h1>{{ card.title }}</h1>
+        <div class="detail-meta">
+            <span>{{ card.location }}</span><span>{{ card.department }}</span><span>{{ card.employment_type }}</span>
+            {% if card.seniority_level %}<span>{{ card.seniority_level }}</span>{% endif %}
+        </div>
+        {% if card.salary and card.salary != 'Not specified' %}<p class="salary">{{ card.salary }}</p>{% endif %}
+        {% if card.application_deadline %}<div class="deadline-banner"><strong>Application deadline:</strong> {{ card.application_deadline.strftime('%A, %d %B %Y') }}</div>{% endif %}
+
+        <div class="divider"></div>
+        <h2>About the role</h2>
+        <div class="job-description">{{ job.jd_text }}</div>
+
+        {% if card.skills %}
+        <h2>Key skills</h2>
+        <div class="skills large">{% for skill in card.skills %}<span>{{ skill }}</span>{% endfor %}</div>
+        {% endif %}
+    </section>
+
+    <aside class="apply-card" id="apply">
+        <span class="eyebrow">APPLY NOW</span>
+        <h2>Apply for this role</h2>
+        <p>Your application will be added directly to the recruiter's Applicant Pool for this vacancy.</p>
+        {% if application_error %}<div class="form-alert">{{ application_error }}</div>{% endif %}
+        {% if candidate_account %}
+        <div class="signed-in-box">Applying as <strong>{{ candidate_account.full_name }}</strong><br><span>{{ candidate_account.email }}</span></div>
+        <form method="post" action="{{ url_for('careers.apply', job_id=job.id) }}" enctype="multipart/form-data">
+            <label>Resume (PDF only)<input class="file-input" type="file" name="resume" accept="application/pdf,.pdf" required></label>
+            <button type="submit">Submit application</button>
+        </form>
+        {% else %}
+        <div class="candidate-gate"><p>Applicants need a Applicant account before applying.</p><a class="button" href="{{ url_for('candidate_auth.login', next=request.path) }}">Applicant Sign In</a><a class="secondary-button" href="{{ url_for('candidate_auth.register') }}">Create Applicant Account</a></div>
+        {% endif %}
+        <small>By applying, you consent to the employer processing the information in your resume for recruitment purposes.</small>
+    </aside>
+</main>
+</body>
+</html>

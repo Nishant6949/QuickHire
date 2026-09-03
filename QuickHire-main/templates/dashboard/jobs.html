@@ -1,0 +1,217 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Job Postings{% endblock %}
+{% block breadcrumb %}Job Postings{% endblock %}
+{% block topbar_actions %}
+<a class="btn-outline-sm" href="{{ url_for('careers.jobs') }}" target="_blank" rel="noopener"><i data-feather="external-link"></i> Applicant Jobs Page</a>
+<button class="btn-outline-sm" id="new-job-btn"><i data-feather="plus"></i> New Job</button>
+{% endblock %}
+
+{% block page_content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-icon"><i data-feather="briefcase"></i></span>
+        <div class="stat-label">Total Postings</div>
+        <div class="stat-value">{{ total }}</div>
+    </div>
+    <div class="stat-card green">
+        <span class="stat-icon"><i data-feather="check-circle"></i></span>
+        <div class="stat-label">Open Now</div>
+        <div class="stat-value">{{ open_count }}</div>
+    </div>
+    <div class="stat-card amber">
+        <span class="stat-icon"><i data-feather="edit-3"></i></span>
+        <div class="stat-label">Drafts</div>
+        <div class="stat-value">{{ draft_count }}</div>
+    </div>
+    <div class="stat-card red">
+        <span class="stat-icon"><i data-feather="check-square"></i></span>
+        <div class="stat-label">Completed</div>
+        <div class="stat-value">{{ completed_count }}</div>
+    </div>
+</div>
+
+<div class="section-heading">
+    <h2>All Postings</h2>
+    <div style="display:flex;gap:var(--spacing-sm);align-items:center;flex-wrap:wrap;">
+        <div class="search-box">
+            <span class="search-icon"><i data-feather="search" style="width:18px;height:18px;"></i></span>
+            <input type="text" placeholder="Search jobs…" id="jobs-search">
+        </div>
+        <select class="settings-input" id="jobs-dept-filter" style="width:160px;">
+            <option value="all">All Departments</option>
+            {% for dept in departments %}
+            <option value="{{ dept }}">{{ dept }}</option>
+            {% endfor %}
+        </select>
+        <select class="settings-input" id="jobs-status-filter" style="width:140px;">
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="draft">Draft</option>
+            <option value="completed">Completed</option>
+            <option value="closed">Closed</option>
+        </select>
+        <select class="settings-input" id="jobs-date-filter" style="width:160px;">
+            <option value="all">All Time</option>
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+        </select>
+    </div>
+</div>
+
+<div class="data-table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Job Title</th>
+                <th>Department</th>
+                <th>Location</th>
+                <th>Applicants</th>
+                <th>Posted</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="jobs-tbody"></tbody>
+    </table>
+</div>
+
+<div id="jobs-empty" class="empty-state" style="display:none;">
+    <i data-feather="briefcase" style="width:48px;height:48px;color:var(--color-text-disabled);"></i>
+    <p style="color:var(--color-text-low);margin-top:var(--spacing-md);">No jobs found. Create your first posting!</p>
+</div>
+
+<div id="job-detail-panel" style="display:none;">
+    <input type="hidden" id="job-detail-id">
+    <div class="card-panel">
+        <div class="job-detail-header">
+            <button id="job-detail-back" class="btn-outline-sm"><i data-feather="arrow-left"></i> Back to Jobs</button>
+            <h2 id="job-detail-title"></h2>
+            <div style="display:flex;align-items:center;gap:var(--spacing-sm);">
+                <span id="job-detail-badge"></span>
+                <select id="job-status-select" class="settings-input"
+                    style="width:130px;font-size:var(--font-size-xs);">
+                    <option value="open">Open</option>
+                    <option value="draft">Draft</option>
+                    <option value="completed">Completed</option>
+                    <option value="closed">Closed</option>
+                </select>
+                <button id="job-detail-delete" class="btn-outline-sm" type="button" title="Delete this job"
+                    style="color:var(--color-danger,#ef4444);border-color:var(--color-danger,#ef4444);margin-left:var(--spacing-xs);">
+                    <i data-feather="trash-2"></i> Delete Job
+                </button>
+            </div>
+        </div>
+        <div class="job-detail-meta" id="job-detail-meta"></div>
+        <div class="jd-input-toggle">
+            <button class="jd-toggle-btn active" data-tab="jd">Job Description</button>
+            <button class="jd-toggle-btn" data-tab="candidates">Applicants</button>
+        </div>
+        <div id="job-detail-jd" class="job-detail-tab-content"></div>
+        <div id="job-detail-candidates" class="job-detail-tab-content" style="display:none;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div id="new-job-modal" class="modal">
+    <div class="modal-backdrop" id="njm-backdrop"></div>
+    <div class="modal-content" style="max-width:560px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Create New Job Posting</h2>
+            <button class="modal-close" id="njm-close"><i data-feather="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group"><label>Job Title</label><input type="text" id="njm-title"
+                    placeholder="e.g. Senior Backend Developer"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-md);">
+                <div class="form-group"><label>Department</label>
+                    <select class="settings-input" style="width:100%;" id="njm-dept">
+                        <option value="">Select…</option>
+                        <option>Engineering</option>
+                        <option>Product</option>
+                        <option>Design</option>
+                        <option>Sales</option>
+                        <option>Marketing</option>
+                        <option>HR</option>
+                        <option>Finance</option>
+                        <option>Operations</option>
+                        <option>Data</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Location</label><input type="text" id="njm-location"
+                        placeholder="e.g. Remote / Sydney"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-md);">
+                <div class="form-group"><label>Salary Min (AUD)</label><input type="number" id="njm-sal-min"
+                        placeholder="100000"></div>
+                <div class="form-group"><label>Salary Max (AUD)</label><input type="number" id="njm-sal-max"
+                        placeholder="160000"></div>
+            </div>
+            <div class="form-group"><label>Application Deadline <span style="color:var(--color-danger);">*</span></label><input type="date" id="njm-deadline" required></div>
+            <div class="form-group"><label>Description</label><textarea id="njm-desc" rows="4"
+                    placeholder="Describe the role, responsibilities…"></textarea></div>
+            <div class="form-group"><label>Required Skills (comma separated)</label><input type="text" id="njm-skills"
+                    placeholder="React, TypeScript, Node.js"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" id="njm-cancel">Cancel</button>
+            <button class="btn-primary" id="njm-submit"><i data-feather="check"></i> Create Posting</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="resume-preview-modal" style="display:none;">
+    <div class="modal-content modal-content--wide">
+        <div class="modal-header">
+            <h3 id="resume-preview-name">Resume Preview</h3>
+            <button class="modal-close" id="resume-preview-close"><i data-feather="x"></i></button>
+        </div>
+        <div class="modal-body modal-body--pdf">
+            <iframe id="resume-preview-iframe" class="resume-preview-iframe"></iframe>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="jd-invite-modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Send Interview Invite</h3>
+            <button class="modal-close" id="jd-invite-modal-close" type="button" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="jd-invite-modal-to"
+                style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-md);">
+            </p>
+            <div class="form-group">
+                <label for="jd-invite-link">Scheduling link (Calendly, SavvyCal, etc.)</label>
+                <input type="url" id="jd-invite-link" value="" placeholder="https://calendly.com/your-link">
+                <small
+                    style="display:block;margin-top:4px;color:var(--color-text-disabled);font-size:var(--font-size-xs);">
+                    Required. Applicants will use this link to choose an interview time.
+                </small>
+            </div>
+            <div class="form-group">
+                <label for="jd-invite-message">Custom Message (optional)</label>
+                <textarea id="jd-invite-message" rows="3" placeholder="Add a personal note to the invite..."
+                    data-default="Congratulations – you've been selected to move forward in our interview process for this role.&#10;&#10;As the next step, please use the scheduling link below to choose an interview time that works best for you. Once you've selected a slot, you'll receive a calendar invite with all the details.&#10;&#10;If you have any questions or need to reschedule later, feel free to reply directly to this email.&#10;&#10;Best regards"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" id="jd-invite-cancel" type="button">Cancel</button>
+            <button class="btn-primary" id="jd-invite-send" type="button">
+                <i data-feather="send"></i> Send Invite
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>window.__jobs = {{ jobs_data | tojson }};</script>
+<script src="{{ url_for('static', filename='js/jobs.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Application submitted | QuickHire</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/careers.css') }}">
+</head>
+<body>
+{% set active_page = 'jobs' %}
+{% include 'careers/_navigation.html' %}
+<main class="success-wrap">
+    <div class="success-card">
+        <div class="success-check">✓</div>
+        <span class="eyebrow">APPLICATION RECEIVED</span>
+        <h1>You're all set.</h1>
+        <p>Your application for <strong>{{ card.title }}</strong> at <strong>{{ card.company }}</strong> has been submitted to the recruiting team.</p>
+        <p class="muted">The recruiter can now review your profile inside QuickHire's Applicant Pool and continue the recruitment workflow.</p>
+        <a class="button" href="{{ url_for('careers.jobs') }}">Browse more jobs</a>
+    </div>
+</main>
+</body>
+</html>

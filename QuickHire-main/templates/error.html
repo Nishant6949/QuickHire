@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ error_code }} - QuickHire</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+    <a href="{{ url_for('landing.index') }}" class="auth-brand">QuickHire</a>
+
+    <div class="auth-container">
+        <div class="auth-card" style="text-align: center;">
+            <i data-feather="{{ error_icon }}" style="width: 48px; height: 48px; color: var(--color-primary); margin-bottom: var(--spacing-md); display: block; margin-left: auto; margin-right: auto;"></i>
+            <p class="error-code">{{ error_code }}</p>
+            <h2 class="auth-header">{{ error_title }}</h2>
+            <p class="auth-subtext">{{ error_description }}</p>
+            <a href="{{ url_for('landing.index') }}" class="btn-primary btn-full" style="display: inline-flex; align-items: center; justify-content: center; gap: var(--spacing-xs); text-decoration: none; margin-top: var(--spacing-lg);">
+                <i data-feather="arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script>feather.replace();</script>
+</body>
+</html>

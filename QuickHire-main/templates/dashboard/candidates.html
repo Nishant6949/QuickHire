@@ -1,0 +1,166 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Applicant Pipeline{% endblock %}
+{% block breadcrumb %}Applicant Pipeline{% endblock %}
+
+{% block page_content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-icon"><i data-feather="users"></i></span>
+        <div class="stat-label">Total Applicants</div>
+        <div class="stat-value">{{ total_count }}</div>
+    </div>
+    <div class="stat-card green">
+        <span class="stat-icon"><i data-feather="user-check"></i></span>
+        <div class="stat-label">Shortlisted / Interview</div>
+        <div class="stat-value">{{ shortlisted_count }}</div>
+    </div>
+    <div class="stat-card amber">
+        <span class="stat-icon"><i data-feather="clock"></i></span>
+        <div class="stat-label">New / Review</div>
+        <div class="stat-value">{{ pending_count }}</div>
+    </div>
+    <div class="stat-card purple">
+        <span class="stat-icon"><i data-feather="check-circle"></i></span>
+        <div class="stat-label">Hired</div>
+        <div class="stat-value">{{ hired_count }}</div>
+    </div>
+</div>
+
+<div class="section-heading">
+    <div><span class="page-kicker">TALENT PIPELINE</span><h2>All Applicants</h2><p class="section-subtitle">Review, compare and progress applicants through each hiring stage.</p></div>
+    <div style="display:flex;gap:var(--spacing-sm);align-items:center;flex-wrap:wrap;">
+        <div class="search-box">
+            <span class="search-icon"><i data-feather="search" style="width:18px;height:18px;"></i></span>
+            <input type="text" placeholder="Search candidates…" id="cand-search">
+        </div>
+        <select class="settings-input" id="cand-status-filter" style="width:150px;">
+            <option value="all">All Statuses</option>
+            <option value="pending">New / Pending</option>
+            <option value="scored">Screened / Scored</option>
+            <option value="shortlisted">Shortlisted</option>
+            <option value="invited">Invited</option>
+            <option value="interview_done">Interview Done</option>
+            <option value="final_hired">Hired</option>
+            <option value="final_rejected">Rejected</option>
+        </select>
+        <select class="settings-input" id="cand-job-filter" style="width:200px;">
+            <option value="all">All Jobs</option>
+            {% for job_id, job_title in job_filter_options %}
+            <option value="{{ job_id }}">{{ job_title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<div class="data-table-wrap" style="{{ 'display:none;' if not candidates_data else '' }}">
+    <table>
+        <thead>
+            <tr>
+                <th>Applicant</th>
+                <th>Applied For</th>
+                <th>Applied</th>
+                <th>Top Skills</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="cand-tbody">
+            {% for c in candidates_data %}
+            <tr data-id="{{ c.id }}" data-status="{{ c.status }}" data-job-id="{{ c.job_id }}"
+                data-name="{{ c.candidate_name }}" data-email="{{ c.candidate_email }}"
+                style="cursor:pointer;">
+                <td>
+                    <div style="display:flex;flex-direction:column;">
+                        <span style="font-weight:600;color:var(--color-text-high);">{{ c.candidate_name or "Unknown" }}</span>
+                        <span style="font-size:var(--font-size-xs);color:var(--color-text-disabled);">{{ c.candidate_email or "" }}</span>
+                    </div>
+                </td>
+                <td>{{ c.job_title or "Unknown" }}</td>
+                <td>{{ c.applied_at }}</td>
+                <td>
+                    {% for s in c.matched_skills[:3] %}
+                    <span class="pill-tag">{{ s }}</span>
+                    {% endfor %}
+                    {% if c.matched_skills|length > 3 %}
+                    <span class="pill-tag" style="opacity:0.6;">+{{ c.matched_skills|length - 3 }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="result-score {{ 'green' if c.match_score >= 90 else ('amber' if c.match_score >= 70 else 'red') }}"
+                        style="width:40px;height:36px;font-size:var(--font-size-sm);">{{ c.match_score if c.match_score else '—' }}</div>
+                </td>
+                <td data-role="candidate-status">{{ c.status_html|safe }}</td>
+                <td style="white-space:nowrap;">
+                    <button class="contact-btn card-pdf-btn" data-id="{{ c.id }}" type="button"{{ " disabled" if not c.candidate_email }}><i data-feather="mail"></i> Contact</button>
+                    <button class="delete-cand-btn" data-id="{{ c.id }}" type="button" title="Delete candidate"
+                        style="background:transparent;border:1px solid rgba(239,68,68,0.5);color:var(--color-danger);border-radius:6px;padding:6px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-xs);transition:all 0.15s;">
+                        <i data-feather="trash-2" style="width:18px;height:18px;"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="empty-state" id="cand-empty" style="display:{{ 'none' if candidates_data else 'flex' }};">
+    <i data-feather="users"
+        style="width:48px;height:48px;color:var(--color-text-disabled);margin-bottom:var(--spacing-md);"></i>
+    <p style="color:var(--color-text-disabled);font-size:var(--font-size-sm);">No candidates found. Applications submitted through the Applicant Portal will appear here automatically.</p>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-overlay" id="contact-modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Contact Applicant</h3>
+            <button class="modal-close" id="contact-modal-close" type="button" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="contact-to">To</label>
+                <input type="email" id="contact-to" readonly>
+            </div>
+            <div class="form-group">
+                <label for="contact-subject">Subject</label>
+                <input type="text" id="contact-subject" placeholder="Enter email subject…">
+            </div>
+            <div class="form-group">
+                <label for="contact-body">Message</label>
+                <textarea id="contact-body" rows="6" placeholder="Write your message…"></textarea>
+            </div>
+            <input type="hidden" id="contact-candidate-id">
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" id="contact-cancel-btn" type="button">Cancel</button>
+            <button class="btn-primary" id="contact-send-btn" type="button">
+                <i data-feather="send"></i> Send Email
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="detail-modal" style="display:none;">
+    <div class="modal-content modal-content--wide" style="height:auto;max-height:85vh;">
+        <div class="modal-header">
+            <h3 id="detail-modal-name">Applicant Details</h3>
+            <button class="modal-close" id="detail-modal-close" type="button" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="detail-modal-body"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.__candidates = {{ candidates_data | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/candidates.js') }}"></script>
+{% endblock %}

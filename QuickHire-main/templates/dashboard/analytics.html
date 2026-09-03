@@ -1,0 +1,107 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Analytics{% endblock %}
+{% block breadcrumb %}Analytics{% endblock %}
+{% block topbar_actions %}
+<select class="settings-input" id="time-range" style="width:130px;">
+    <option value="7d">Last 7 Days</option>
+    <option value="30d" selected>Last 30 Days</option>
+    <option value="90d">Last 90 Days</option>
+</select>
+<button class="btn-outline-sm" id="export-btn"><i data-feather="download"></i> Export</button>
+<button class="icon-btn"><i data-feather="bell"></i></button>
+{% endblock %}
+
+{% block page_content %}
+<!-- KPI Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-icon"><i data-feather="users"></i></span>
+        <div class="stat-label">Total Applicants</div>
+        <div class="stat-value" id="kpi-total">—</div>
+        <div class="stat-change" id="kpi-total-sub">in selected period</div>
+    </div>
+    <div class="stat-card green">
+        <span class="stat-icon"><i data-feather="bar-chart-2"></i></span>
+        <div class="stat-label">Avg Match Score</div>
+        <div class="stat-value" id="kpi-avg-score">—</div>
+        <div class="stat-change" id="kpi-avg-sub">across scored candidates</div>
+    </div>
+    <div class="stat-card amber">
+        <span class="stat-icon"><i data-feather="check-circle"></i></span>
+        <div class="stat-label">Shortlisted</div>
+        <div class="stat-value" id="kpi-shortlisted">—</div>
+        <div class="stat-change" id="kpi-shortlisted-sub">invited or above</div>
+    </div>
+    <div class="stat-card purple">
+        <span class="stat-icon"><i data-feather="award"></i></span>
+        <div class="stat-label">Hired</div>
+        <div class="stat-value" id="kpi-hired">—</div>
+        <div class="stat-change" id="kpi-hired-sub">final_hired status</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Applications over time (bar chart) -->
+    <div class="card-panel">
+        <h3>Applicants Over Time</h3>
+        <div id="app-chart" class="analytics-bar-chart-wrap">
+            <div class="analytics-empty" id="app-chart-empty" style="display:none;">No candidate data in this period.
+            </div>
+        </div>
+    </div>
+
+    <!-- Applicants by department (horizontal bars) -->
+    <div class="card-panel">
+        <h3>Applicants by Department</h3>
+        <div id="dept-breakdown">
+            <div class="analytics-empty" id="dept-empty" style="display:none;">No department data available.</div>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Funnel / Pipeline -->
+    <div class="card-panel">
+        <h3>Hiring Funnel <span style="font-size:0.75em;color:var(--color-text-disabled);font-weight:400;">(all
+                time)</span></h3>
+        <div id="funnel-chart">
+            <div class="analytics-empty" id="funnel-empty" style="display:none;">No pipeline data yet.</div>
+        </div>
+    </div>
+
+    <!-- Top skills in demand -->
+    <div class="card-panel">
+        <h3>Top Skills in Demand</h3>
+        <div id="skills-demand" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;">
+            <div class="analytics-empty" id="skills-empty" style="display:none;">No skill data available.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent hires table -->
+<div class="section-heading" style="margin-top:var(--spacing-xl);">
+    <h2>Recent Hires</h2>
+</div>
+<div class="data-table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Applicant</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Match Score</th>
+                <th>Added On</th>
+            </tr>
+        </thead>
+        <tbody id="hires-tbody">
+            <tr id="hires-empty-row">
+                <td colspan="5" style="text-align:center;color:var(--color-text-disabled);padding:2rem;">No hired
+                    candidates yet.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="/static/js/analytics.js"></script>
+{% endblock %}
