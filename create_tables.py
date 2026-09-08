@@ -24,7 +24,9 @@ def ensure_job_deadline_column():
     columns = {column["name"] for column in inspector.get_columns("jobs")}
     if "application_deadline" not in columns:
         with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE jobs ADD COLUMN application_deadline DATETIME"))
+            connection.execute(
+    text("ALTER TABLE jobs ADD COLUMN application_deadline TIMESTAMP")
+)
         print("Added jobs.application_deadline column.")
 
 
@@ -36,7 +38,9 @@ def ensure_employer_phone_column():
     columns = {column["name"] for column in inspector.get_columns("user")}
     if "phone" not in columns:
         with db.engine.begin() as connection:
-            connection.execute(text("ALTER TABLE user ADD COLUMN phone VARCHAR(50)"))
+          connection.execute(
+    text('ALTER TABLE "user" ADD COLUMN phone VARCHAR(50)')
+)
         print("Added user.phone column.")
 
 
