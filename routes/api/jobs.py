@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime, timezone
 
 import anthropic
 from flask import Blueprint, request, jsonify, current_app
@@ -148,6 +149,16 @@ def create_job():
     description = request.form.get("description", "").strip() or ""
     skills = request.form.get("skills", "").strip() or None
 
+    deadline_raw = request.form.get("application_deadline", "").strip()
+    if not deadline_raw:
+        return jsonify({"success": False, "error": "Application deadline is required"}), 400
+    try:
+        application_deadline = datetime.fromisoformat(deadline_raw + "T23:59:59").replace(tzinfo=None)
+        if application_deadline.date() < datetime.now(timezone.utc).date():
+            return jsonify({"success": False, "error": "Application deadline cannot be in the past"}), 400
+    except ValueError:
+        return jsonify({"success": False, "error": "Please enter a valid application deadline"}), 400
+
     salary_min = None
     salary_max = None
     try:
@@ -162,7 +173,7 @@ def create_job():
         user_id=current_user.id, title=title, jd_text=description,
         department=department, location=location,
         salary_min=salary_min, salary_max=salary_max,
-        required_skills=skills, status="open"
+        required_skills=skills, application_deadline=application_deadline, status="open"
     )
     db.session.add(job)
     db.session.commit()
@@ -175,6 +186,7 @@ def create_job():
             "location": job.location or "", "status": job.status,
             "status_html": render_status_badge(job.status),
             "candidate_count": 0, "created_at": job.created_at.strftime("%Y-%m-%d"),
+            "application_deadline": job.application_deadline.strftime("%Y-%m-%d") if job.application_deadline else "",
         },
         "stats": stats,
     })
@@ -203,6 +215,7 @@ def job_detail(job_id):
             "salary_min": job.salary_min,
             "salary_max": job.salary_max,
             "salary_display": format_salary(job.salary_min, job.salary_max),
+            "application_deadline": job.application_deadline.strftime("%Y-%m-%d") if job.application_deadline else "",
             "required_skills": job.required_skills or "",
             "jd_text": job.jd_text or "",
             "jd_text_html": format_jd_text(job.jd_text),

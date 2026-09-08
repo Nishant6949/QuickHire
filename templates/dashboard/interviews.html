@@ -1,0 +1,102 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block title %}Interviews{% endblock %}
+
+{% block page_content %}
+<div class="interviews-workspace">
+    <div class="page-title-row">
+        <div>
+            <span class="page-kicker">INTERVIEW WORKSPACE</span>
+            <h1>Interviews</h1>
+            <p>Keep interview-stage applicants separate from the main pipeline and follow each next step clearly.</p>
+        </div>
+        <a class="btn-outline" href="{{ url_for('dashboard_bp.candidates', status='shortlisted') }}">
+            <i data-feather="user-check"></i> Review shortlisted
+        </a>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:18px;grid-template-columns:repeat(3,minmax(160px,1fr));">
+        <div class="stat-card green">
+            <span class="stat-icon"><i data-feather="calendar"></i></span>
+            <div class="stat-label">Interview stage</div>
+            <div class="stat-value">{{ total_interviews }}</div>
+            <div class="stat-change">All invited and completed interviews</div>
+        </div>
+        <div class="stat-card amber">
+            <span class="stat-icon"><i data-feather="clock"></i></span>
+            <div class="stat-label">Awaiting interview</div>
+            <div class="stat-value">{{ upcoming|length }}</div>
+            <div class="stat-change">Invited applicants</div>
+        </div>
+        <div class="stat-card purple">
+            <span class="stat-icon"><i data-feather="check-circle"></i></span>
+            <div class="stat-label">Completed</div>
+            <div class="stat-value">{{ completed|length }}</div>
+            <div class="stat-change">Ready for final review</div>
+        </div>
+    </div>
+
+    <div class="interview-layout">
+        <section class="qh-panel">
+            <div class="qh-panel-head">
+                <div><span class="page-kicker">UPCOMING</span><h2>Interview queue</h2></div>
+                <a href="{{ url_for('dashboard_bp.candidates', status='invited') }}">Open pipeline →</a>
+            </div>
+            <div class="qh-panel-body interview-list">
+                {% for c in upcoming %}
+                <article class="interview-card">
+                    <div class="interview-date">
+                        {% if c.interview_at %}
+                        <strong>{{ c.interview_at.strftime('%d') }}</strong><span>{{ c.interview_at.strftime('%b') }}</span>
+                        {% else %}
+                        <strong>—</strong><span>TBC</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h3>{{ c.candidate_name or 'Applicant' }}</h3>
+                        <p>{{ c.job.title if c.job else 'Role' }} · {{ c.candidate_email or 'Email not available' }}</p>
+                        <div style="display:flex;gap:7px;align-items:center;margin-top:7px;">
+                            <span class="pipeline-chip">Invited</span>
+                            <span class="pipeline-chip">Match {{ c.match_score if c.match_score is not none else '—' }}%</span>
+                        </div>
+                    </div>
+                    <a class="btn-outline-sm" href="{{ url_for('dashboard_bp.candidates') }}?q={{ (c.candidate_name or '')|urlencode }}">View applicant</a>
+                </article>
+                {% else %}
+                <div class="empty-state" style="min-height:260px;">
+                    <i data-feather="calendar" style="width:40px;height:40px;margin-bottom:12px;"></i>
+                    <strong style="color:#fff;">No interviews waiting</strong>
+                    <p>Invite a shortlisted applicant and they will appear here.</p>
+                    <a class="btn-primary" href="{{ url_for('dashboard_bp.candidates') }}" style="margin-top:10px;">View applicants</a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <aside class="interview-side">
+            <section class="qh-panel">
+                <div class="qh-panel-head"><h2>Interview process</h2></div>
+                <div class="timeline-steps">
+                    <div class="timeline-step"><i>1</i><div><strong>Shortlist</strong><p>Review the ranked applicant and resume.</p></div></div>
+                    <div class="timeline-step"><i>2</i><div><strong>Invite</strong><p>Send the scheduling link by QuickHire email.</p></div></div>
+                    <div class="timeline-step"><i>3</i><div><strong>Interview</strong><p>Meet the applicant and record the outcome.</p></div></div>
+                    <div class="timeline-step"><i>4</i><div><strong>Decision</strong><p>Move the applicant to hired or rejected.</p></div></div>
+                </div>
+            </section>
+
+            <section class="qh-panel">
+                <div class="qh-panel-head"><h2>Completed</h2><span style="color:var(--qh-muted);font-size:10px;">{{ completed|length }} total</span></div>
+                <div class="qh-panel-body" style="display:grid;gap:8px;">
+                    {% for c in completed[:5] %}
+                    <a href="{{ url_for('dashboard_bp.candidates') }}?q={{ (c.candidate_name or '')|urlencode }}" style="display:flex;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(255,255,255,.05);border-radius:10px;background:rgba(255,255,255,.02);text-decoration:none;">
+                        <span><strong style="display:block;font-size:10px;">{{ c.candidate_name or 'Applicant' }}</strong><small>{{ c.job.title if c.job else 'Role' }}</small></span>
+                        <span class="pipeline-chip">Review</span>
+                    </a>
+                    {% else %}
+                    <p style="font-size:10px;margin:0;">Completed interviews will appear here.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}

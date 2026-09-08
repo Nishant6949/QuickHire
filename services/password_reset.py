@@ -65,48 +65,11 @@ def consume_reset_token(token):
 
 
 def send_password_reset_email(to_email, reset_link):
-    """Send a password reset email using the same Gmail SMTP credentials."""
-    gmail_addr = current_app.config.get("GMAIL_ADDRESS")
-    gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
-    if not gmail_addr or not gmail_pass:
-        if os.getenv("EMAIL_MODE", "console").lower() == "console":
-            logger.info("PASSWORD RESET PREVIEW -> %s | %s", to_email, reset_link)
-            return True
-        logger.error("Gmail credentials not configured")
-        return False
-
-    html = (
-        '<table style="max-width:520px;margin:0 auto;font-family:Inter,sans-serif;background:#0F1114;'
-        'border:1px solid rgba(34,197,94,0.15);border-radius:10px;padding:32px;color:#FAFAFA;">'
-        '<tr><td style="font-size:20px;font-weight:700;color:#22C55E;padding-bottom:16px;">QuickHire</td></tr>'
-        '<tr><td style="height:2px;background:rgba(34,197,94,0.15);"></td></tr>'
-        '<tr><td style="padding:20px 0 8px;font-size:18px;font-weight:600;">Password Reset</td></tr>'
-        '<tr><td style="color:#A1A1AA;font-size:14px;padding-bottom:16px;">Hi there,</td></tr>'
-        '<tr><td style="color:#A1A1AA;font-size:14px;line-height:1.6;padding-bottom:16px;">'
-        'We received a request to reset your password. Click the button below to choose a new password. '
-        'This link will expire in ' + str(TOKEN_EXPIRY_MINUTES) + ' minutes.</td></tr>'
-        '<tr><td style="padding:8px 0 16px;">'
-        '<a href="' + reset_link + '" style="display:inline-block;padding:12px 28px;'
-        'background:#22C55E;color:#070809;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">'
-        'Reset Password</a></td></tr>'
-        '<tr><td style="color:#71717A;font-size:12px;line-height:1.5;padding-bottom:16px;">'
-        'If you didn\'t request this, you can safely ignore this email. Your password will remain unchanged.</td></tr>'
-        '<tr><td style="padding:8px 0 0;color:#71717A;font-size:12px;">Sent via QuickHire</td></tr>'
-        '</table>'
-    )
-
-    msg = MIMEMultipart("alternative")
-    msg["From"] = f"QuickHire <{gmail_addr}>"
-    msg["To"] = to_email
-    msg["Subject"] = "QuickHire - Password Reset"
-    msg.attach(MIMEText(html, "html"))
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(gmail_addr, gmail_pass)
-            server.send_message(msg)
-        logger.info("Password reset email sent to %s", to_email)
-        return True
-    except Exception as e:
-        logger.error("Failed to send password reset email to %s: %s", to_email, e)
-        return False
+    """Send a real password reset email through the configured transactional provider."""
+    from services.messaging import send_email
+    html = f"""<div style='font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:32px;border:1px solid #e5e7eb;border-radius:14px'>
+    <div style='font-size:24px;font-weight:800;color:#16a34a'>QuickHire</div><h2>Password reset</h2>
+    <p>We received a request to reset your QuickHire password. This secure link expires in {TOKEN_EXPIRY_MINUTES} minutes.</p>
+    <p><a href='{reset_link}' style='display:inline-block;padding:12px 22px;background:#16a34a;color:white;text-decoration:none;border-radius:8px;font-weight:700'>Reset password</a></p>
+    <p style='color:#71717a;font-size:13px'>If you did not request this, ignore this email.</p></div>"""
+    return send_email(to_email, "QuickHire - Password Reset", html)

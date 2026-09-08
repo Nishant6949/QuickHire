@@ -1,306 +1,119 @@
 {% extends 'dashboard/base_dashboard.html' %}
-
-{% block title %}Dashboard{% endblock %}
-{% block breadcrumb %}Dashboard{% endblock %}
+{% block title %}Employer Dashboard{% endblock %}
 
 {% block page_content %}
-<div id="wizard-container">
-    <div class="wizard-stepper">
-        <div class="wizard-step active" data-step="1">
-            <div class="wizard-step-circle">1</div>
-            <span class="wizard-step-label">Job Description</span>
-        </div>
-        <div class="wizard-step-connector"></div>
-        <div class="wizard-step" data-step="2">
-            <div class="wizard-step-circle">2</div>
-            <span class="wizard-step-label">Upload Resumes</span>
-        </div>
-        <div class="wizard-step-connector"></div>
-        <div class="wizard-step" data-step="3">
-            <div class="wizard-step-circle">3</div>
-            <span class="wizard-step-label">AI Ranking & Selection</span>
-        </div>
-        <div class="wizard-step-connector"></div>
-        <div class="wizard-step" data-step="4">
-            <div class="wizard-step-circle">4</div>
-            <span class="wizard-step-label">Onboarding</span>
+<section class="qh-dashboard-hero">
+    <div class="qh-hero-copy">
+        <span class="qh-eyebrow">EMPLOYER DASHBOARD</span>
+        <h1>Find exceptional talent, <em>faster.</em></h1>
+        <p>AI-assisted screening, clear applicant ranking and the hiring tools your team needs in one professional workspace.</p>
+        <div class="qh-hero-actions">
+            <a class="btn-primary" href="{{ url_for('dashboard_bp.jobs', create='1') }}"><i data-feather="plus-circle"></i> Post a Job</a>
+            <a class="btn-outline" href="{{ url_for('dashboard_bp.candidates') }}"><i data-feather="users"></i> View Applicants</a>
         </div>
     </div>
 
-    <div class="wizard-panel active" id="step-1-panel">
-        <div class="card-panel">
-            <h2 class="wizard-panel-title">Upload Job Description</h2>
-            <p class="wizard-panel-subtitle">Upload a PDF or paste the job description text to get started</p>
-
-            <div class="jd-input-toggle">
-                <button class="jd-toggle-btn active" data-mode="upload" type="button">
-                    <i data-feather="upload-cloud"></i> Upload PDF
-                </button>
-                <button class="jd-toggle-btn" data-mode="paste" type="button">
-                    <i data-feather="edit-3"></i> Paste Text
-                </button>
+    <aside class="qh-ai-card" aria-label="AI screening summary">
+        <span class="qh-ai-badge"><i data-feather="zap"></i> AI Screening Active</span>
+        <div class="qh-ai-main">
+            <div class="qh-ai-number">
+                <strong>{{ avg_score }}%</strong>
+                <span>Average match</span>
+                <small>Across scored applicants</small>
             </div>
-
-            <div class="jd-upload-area" id="jd-upload-area">
-                <div class="drop-zone" id="jd-drop-zone">
-                    <i data-feather="upload-cloud" class="drop-icon"></i>
-                    <h3 class="drop-header">Drag & drop your file here</h3>
-                    <p class="drop-subtext">Supports PDF files up to 16MB</p>
-                    <button class="btn-outline" type="button" id="jd-browse-btn">Browse Files</button>
-                    <input type="file" id="jd-file-input" accept=".pdf" style="display:none;">
+            <div class="qh-match-stack">
+                {% for c in recent_applicants[:3] %}
+                <div class="qh-match-mini {% if loop.first %}best{% endif %}">
+                    <span class="mini-avatar">{{ (c.candidate_name or 'A')[:2]|upper }}</span>
+                    <span class="mini-lines"><b>{% if loop.first %}Top Match{% else %}Applicant{% endif %}</b><i></i></span>
+                    <strong>{% if c.match_score is not none %}{{ c.match_score }}%{% else %}—{% endif %}</strong>
                 </div>
-                <div class="jd-file-preview" id="jd-file-preview" style="display:none;">
-                    <i data-feather="file-text"></i>
-                    <span class="jd-file-name" id="jd-file-name"></span>
-                    <button class="jd-file-remove" id="jd-file-remove" type="button" aria-label="Remove file">
-                        <i data-feather="x"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="jd-paste-area" id="jd-paste-area" style="display:none;">
-                <div class="form-group">
-                    <textarea id="jd-textarea" rows="10" placeholder="Paste your job description here..."></textarea>
-                </div>
-            </div>
-
-            <div class="jd-analyzing" id="jd-analyzing" style="display:none;">
-                <div class="processing-state">
-                    <div class="processing-content">
-                        <div class="loader"></div>
-                        <p class="processing-text">Analyzing job description with AI...</p>
-                        <p class="processing-subtext">Extracting title, skills, and requirements</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="analysis-summary" id="jd-analysis-result" style="display:none;">
-                <div class="analysis-header">
-                    <i data-feather="check-circle"></i>
-                    <span>JD Analysis Complete</span>
-                </div>
-                <div class="analysis-fields" id="analysis-fields"></div>
-                <div class="analysis-skills" id="analysis-skills-wrap" style="display:none;">
-                    <span class="analysis-field-label">Key Skills</span>
-                    <div class="analysis-skills-list" id="analysis-skills-list"></div>
-                </div>
-                <button class="btn-primary analysis-continue-btn" id="analysis-continue-btn" type="button">
-                    Continue to Resume Upload <i data-feather="arrow-right"></i>
-                </button>
-            </div>
-
-            <div class="wizard-nav" id="jd-wizard-nav">
-                <div></div>
-                <button class="btn-primary" id="jd-next-btn" disabled type="button">
-                    Next <i data-feather="arrow-right"></i>
-                </button>
+                {% else %}
+                <div class="qh-match-mini best"><span class="mini-avatar">QH</span><span class="mini-lines"><b>Ready to screen</b><i></i></span><strong>AI</strong></div>
+                <div class="qh-match-mini"><span class="mini-avatar">+</span><span class="mini-lines"><b>Add applicants</b><i></i></span><strong>→</strong></div>
+                {% endfor %}
             </div>
         </div>
+    </aside>
+</section>
+
+<div class="qh-kpi-grid">
+    {% for label,value,icon,sub in [
+        ('Active Jobs',active_jobs,'briefcase','Currently open'),
+        ('Total Applicants',total_applicants,'users','Across your vacancies'),
+        ('Shortlisted',shortlisted,'user-check','Ready for next stage'),
+        ('Interviews',interviews,'calendar','Invited or completed'),
+        ('Hired',hired,'check-circle','Successful placements')
+    ] %}
+    <div class="qh-kpi">
+        <span class="qh-kpi-icon"><i data-feather="{{ icon }}"></i></span>
+        <div><span>{{ label }}</span><strong>{{ value }}</strong><small>{{ sub }}</small></div>
     </div>
-
-    <div class="wizard-panel" id="step-2-panel">
-        <div class="card-panel">
-            <h2 class="wizard-panel-title">Upload Candidate Resumes</h2>
-            <p class="wizard-panel-subtitle">Upload one or more PDF resumes to screen against the job description</p>
-
-            <div class="drop-zone" id="resume-drop-zone">
-                <i data-feather="users" class="drop-icon"></i>
-                <h3 class="drop-header">Drag & drop resumes here</h3>
-                <p class="drop-subtext">Supports multiple PDF files up to 16MB each</p>
-                <button class="btn-outline" type="button" id="resume-browse-btn">Browse Files</button>
-                <input type="file" id="resume-file-input" accept=".pdf" multiple style="display:none;">
-            </div>
-
-            <div class="resume-list" id="resume-list" style="display:none;">
-                <div class="resume-list-header">
-                    <span class="resume-count" id="resume-count">0 resumes uploaded</span>
-                    <button class="btn-outline-sm" type="button" id="add-more-btn">
-                        <i data-feather="plus"></i> Add More
-                    </button>
-                </div>
-                <div class="resume-items" id="resume-items"></div>
-            </div>
-
-            <div class="wizard-nav">
-                <button class="btn-outline" id="resume-back-btn" type="button">
-                    <i data-feather="arrow-left"></i> Back
-                </button>
-                <button class="btn-primary" id="start-screening-btn" disabled type="button">
-                    Next <i data-feather="arrow-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="wizard-panel" id="step-3-panel">
-        <div class="card-panel">
-            <div class="screening-loading" id="screening-loading">
-                <div class="processing-state screening-processing">
-                    <div class="processing-content">
-                        <div class="loader"></div>
-                        <p class="processing-text">Analyzing resumes with AI...</p>
-                        <p class="processing-subtext" id="screening-resume-count"></p>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="screening-progress-fill"></div>
-                        </div>
-                        <span class="progress-percent" id="screening-progress-percent">0%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="screening-results" id="screening-results" style="display:none;">
-                <div class="results-header">
-                    <div>
-                        <h2 class="wizard-panel-title">AI Ranking & Selection</h2>
-                        <p class="wizard-panel-subtitle">Select candidates to invite for interviews or export reports</p>
-                    </div>
-                    <div class="selection-checkbox-wrap">
-                        <label class="selection-checkbox-label">
-                            <input type="checkbox" id="select-all-checkbox">
-                            <span>Select All</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="selection-bar" id="selection-bar" style="display:none;">
-                    <span class="selection-count" id="selection-count">0 selected</span>
-                    <div class="selection-actions">
-                        <button class="btn-outline btn-sm" id="export-pdf-btn" type="button">
-                            <i data-feather="download"></i> Export PDF
-                        </button>
-                        <button class="btn-primary btn-sm" id="send-invite-btn" type="button">
-                            <i data-feather="mail"></i> Send Interview Invite
-                        </button>
-                    </div>
-                </div>
-                <div class="results-controls">
-                    <div class="results-sort">
-                        <label for="sort-select">Sort by</label>
-                        <select id="sort-select">
-                            <option value="match_score">Overall Score</option>
-                            <option value="skills_score">Skills</option>
-                            <option value="experience_score">Experience</option>
-                            <option value="education_score">Education</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="skill-filter" id="skill-filter" style="display:none;">
-                    <span class="skill-filter-label">Filter by skill</span>
-                    <div class="skill-filter-pills" id="skill-filter-pills"></div>
-                </div>
-                <div class="results-grid" id="results-grid"></div>
-                <div class="wizard-nav">
-                    <button class="btn-outline" id="results-back-btn" type="button">
-                        <i data-feather="arrow-left"></i> New Screening
-                    </button>
-                    <div></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="wizard-panel" id="step-4-panel">
-        <div class="card-panel">
-            <div class="step4-header">
-                <div>
-                    <h2 class="wizard-panel-title">Post-Interview & Onboarding</h2>
-                    <p class="wizard-panel-subtitle">Track interview outcomes and generate onboarding documents</p>
-                </div>
-            </div>
-            <div class="step4-status-groups" id="step4-status-groups"></div>
-            <div class="wizard-nav">
-                <button class="btn-outline" id="step4-back-btn" type="button">
-                    <i data-feather="arrow-left"></i> Back to Results
-                </button>
-                <div></div>
-            </div>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 
-<div class="modal-overlay" id="invite-modal" style="display:none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Send Interview Invite</h3>
-            <button class="modal-close" id="invite-modal-close" type="button" aria-label="Close">
-                <i data-feather="x"></i>
-            </button>
+<div class="qh-content-grid">
+    <section class="qh-panel">
+        <div class="qh-panel-head">
+            <h2><i data-feather="users" style="width:17px;color:var(--qh-green);vertical-align:middle;margin-right:6px;"></i> Best-Matched Applicants</h2>
+            <a href="{{ url_for('dashboard_bp.candidates') }}">View all →</a>
         </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label for="invite-scheduling-link">Scheduling link (Calendly, SavvyCal, etc.)</label>
-                <input type="url" id="invite-scheduling-link" value="https://calendly.com/dahalaatmik/30min" placeholder="https://calendly.com/your-link">
-                <small style="display:block;margin-top:4px;color:var(--color-text-disabled);font-size:var(--font-size-xs);">
-                    Optional. If provided, candidates will choose a time that works for them via this link.
-                </small>
+        <div class="qh-panel-body">
+            <div class="qh-applicant-row header">
+                <span>#</span><span>Applicant</span><span>Position</span><span>Match Score</span><span>Status</span><span>Applied</span>
             </div>
-            <div class="form-group">
-                <label for="invite-message">Custom Message (optional)</label>
-                <textarea id="invite-message" rows="3" placeholder="Add a personal note to the invite..."
-                    data-default="Congratulations – you've been selected to move forward in our interview process for this role.&#10;&#10;As the next step, please use the scheduling link below to choose an interview time that works best for you. Once you've selected a slot, you'll receive a calendar invite with all the details.&#10;&#10;If you have any questions or need to reschedule later, feel free to reply directly to this email.&#10;&#10;Best regards,&#10;The Hiring Team&#10;QuickHire"></textarea>
+            {% for c in recent_applicants %}
+            <div class="qh-applicant-row">
+                <span style="color:#78958d;font-size:10px;">{{ loop.index }}</span>
+                <span class="qh-person">
+                    <span class="qh-person-avatar">{{ (c.candidate_name or 'A')[:2]|upper }}</span>
+                    <span><b>{{ c.candidate_name or c.resume_filename }}</b><small>{{ c.candidate_email or '' }}</small></span>
+                </span>
+                <span class="qh-role">{{ c.job.title if c.job else 'Unknown role' }}</span>
+                <span class="qh-score-wrap">
+                    {% set score = c.match_score or 0 %}
+                    <span class="qh-score-track"><i style="width:{{ score }}%"></i></span>
+                    <strong>{% if c.match_score is not none %}{{ c.match_score }}%{% else %}—{% endif %}</strong>
+                </span>
+                <span><b class="pipeline-chip">{{ (c.status or 'pending')|replace('_',' ')|title }}</b></span>
+                <span style="color:#779189;font-size:10px;">{{ c.created_at.strftime('%d %b') if c.created_at else '—' }}</span>
             </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-outline" id="invite-cancel-btn" type="button">Cancel</button>
-            <button class="btn-primary" id="invite-submit-btn" type="button">
-                <i data-feather="send"></i> Send Invites
-            </button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="resume-preview-modal" style="display:none;">
-    <div class="modal-content modal-content--wide">
-        <div class="modal-header">
-            <h3 id="resume-preview-name">Resume Preview</h3>
-            <button class="modal-close" id="resume-preview-close" type="button" aria-label="Close">
-                <i data-feather="x"></i>
-            </button>
-        </div>
-        <div class="modal-body modal-body--pdf">
-            <iframe id="resume-preview-iframe" class="resume-preview-iframe"></iframe>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="final-decision-modal" style="display:none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="final-decision-title">Final Decision</h3>
-            <button class="modal-close" id="final-decision-close" type="button" aria-label="Close">
-                <i data-feather="x"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <input type="hidden" id="final-decision-id">
-            <input type="hidden" id="final-decision-type">
-            <div class="form-group">
-                <label for="final-decision-notes">Notes (optional)</label>
-                <textarea id="final-decision-notes" rows="3" placeholder="Add notes about this decision..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-outline" id="final-decision-cancel" type="button">Cancel</button>
-            <button class="btn-primary" id="final-decision-submit" type="button">Confirm</button>
-        </div>
-    </div>
-</div>
-
-{% if draft_job %}
-<script>
-    window.__draftJob = {
-        id: {{ draft_job.id }},
-        status: "{{ draft_job.status }}",
-        jdFilename: {{ draft_job.jd_filename | tojson }},
-        candidates: [
-            {% for c in draft_job.candidates %}
-            {id: {{ c.id }}, filename: "{{ c.resume_filename }}", candidateName: {{ c.candidate_name | tojson }}, candidateEmail: {{ (c.candidate_email or "") | tojson }}, matchScore: {{ c.match_score | default(0, true) }}, skillsScore: {{ c.skills_score | default(0, true) }}, experienceScore: {{ c.experience_score | default(0, true) }}, educationScore: {{ c.education_score | default(0, true) }}, matchedSkills: {{ (c.matched_skills or "[]") | safe }}, matchSummary: {{ c.match_summary | tojson }}, status: "{{ c.status }}"}{{ "," if not loop.last }}
+            {% else %}
+            <div style="padding:26px;text-align:center;color:var(--qh-muted);">No applicants yet. Post a job or run AI Screening to start your pipeline.</div>
             {% endfor %}
-        ]
-    };
-</script>
-{% endif %}
-{% endblock %}
+        </div>
+    </section>
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <aside>
+        <section class="qh-panel">
+            <div class="qh-panel-head"><h2><i data-feather="zap" style="width:17px;color:var(--qh-green);vertical-align:middle;margin-right:6px;"></i> Quick Actions</h2></div>
+            <div class="qh-panel-body">
+                <div class="qh-quick-grid">
+                    <a class="qh-quick-action" href="{{ url_for('dashboard_bp.jobs', create='1') }}"><i data-feather="plus-circle"></i><strong>Post a New Job</strong><span>Reach applicants</span></a>
+                    <a class="qh-quick-action" href="{{ url_for('dashboard_bp.candidates') }}"><i data-feather="users"></i><strong>View Applicants</strong><span>Ranked best first</span></a>
+                    <a class="qh-quick-action" href="{{ url_for('dashboard_bp.candidates', status='invited') }}"><i data-feather="calendar"></i><strong>Interviews</strong><span>Review invites</span></a>
+                    <a class="qh-quick-action" href="{{ url_for('dashboard_bp.screening') }}"><i data-feather="cpu"></i><strong>AI Screening</strong><span>Analyse resumes</span></a>
+                </div>
+                <div class="qh-screening-footer">
+                    <strong><i data-feather="target" style="width:14px;color:var(--qh-green);vertical-align:middle;"></i> Decision support</strong>
+                    <p>QuickHire ranks applicants by match score so employers can review the strongest matches first. Final hiring decisions remain with the employer.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="qh-panel" style="margin-top:16px;">
+            <div class="qh-panel-head"><h2>Upcoming Deadlines</h2><a href="{{ url_for('dashboard_bp.jobs') }}">Jobs →</a></div>
+            <div class="qh-panel-body">
+                {% for job in upcoming_deadlines %}
+                <div style="display:flex;justify-content:space-between;gap:12px;padding:11px 2px;border-bottom:1px solid rgba(255,255,255,.045);">
+                    <span><b style="display:block;font-size:11px;">{{ job.title or 'Untitled role' }}</b><small>{{ job.location or 'Location TBC' }}</small></span>
+                    <time style="font-size:10px;color:var(--qh-green);">{{ job.application_deadline.strftime('%d %b') }}</time>
+                </div>
+                {% else %}
+                <p style="color:var(--qh-muted);font-size:11px;">No upcoming application deadlines.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </aside>
+</div>
 {% endblock %}

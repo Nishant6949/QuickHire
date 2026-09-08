@@ -3,13 +3,11 @@
 {% block title %}Settings{% endblock %}
 {% block breadcrumb %}Settings{% endblock %}
 {% block topbar_actions %}
-<button class="icon-btn"><i data-feather="bell"></i></button>
 {% endblock %}
 
 {% block page_content %}
-<h1 style="font-size:var(--font-size-3xl);font-weight:700;color:var(--color-text-high);margin-bottom:var(--spacing-xs);">Settings</h1>
-<p style="font-size:var(--font-size-sm);color:var(--color-text-disabled);margin-bottom:var(--spacing-2xl);">Manage your QuickHire workspace preferences and configurations</p>
-
+<div class="page-title-row"><div><span class="page-kicker">WORKSPACE CONTROL</span><h1>Settings</h1><p>Manage company preferences, screening rules, notifications and account security.</p></div></div>
+<div class="settings-workspace">
 <!-- Tabs -->
 <div class="tab-nav">
     <button class="tab-btn active" data-tab="general">General</button>
@@ -63,7 +61,7 @@
         <p>Control how the AI evaluates candidates</p>
         <div class="settings-row">
             <div class="settings-row-left">
-                <h4>Auto-Screen New Candidates</h4>
+                <h4>Auto-Screen New Applicants</h4>
                 <p>Automatically run AI matching on new applications</p>
             </div>
             <label class="toggle">
@@ -107,7 +105,7 @@
         <p>Choose which emails you receive from QuickHire</p>
         <div class="settings-row">
             <div class="settings-row-left">
-                <h4>New Candidate Matches</h4>
+                <h4>New Applicant Matches</h4>
                 <p>When a high-match candidate is screened above your threshold</p>
             </div>
             <label class="toggle">
@@ -294,6 +292,7 @@
             <button class="btn-danger-solid" id="close-account-btn" onclick="closeAccount()">Close Account</button>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}
 

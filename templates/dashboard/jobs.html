@@ -3,10 +3,13 @@
 {% block title %}Job Postings{% endblock %}
 {% block breadcrumb %}Job Postings{% endblock %}
 {% block topbar_actions %}
+<a class="btn-outline-sm" href="{{ url_for('careers.jobs') }}" target="_blank" rel="noopener"><i data-feather="external-link"></i> Applicant Jobs Page</a>
 <button class="btn-outline-sm" id="new-job-btn"><i data-feather="plus"></i> New Job</button>
 {% endblock %}
 
 {% block page_content %}
+<div class="jobs-workspace">
+<div class="page-title-row"><div><span class="page-kicker">RECRUITMENT OPERATIONS</span><h1>Job postings</h1><p>Create, publish and manage vacancies from one place.</p></div></div>
 <div class="stats-grid">
     <div class="stat-card">
         <span class="stat-icon"><i data-feather="briefcase"></i></span>
@@ -66,8 +69,9 @@
                 <th>Job Title</th>
                 <th>Department</th>
                 <th>Location</th>
-                <th>Candidates</th>
+                <th>Applicants</th>
                 <th>Posted</th>
+                <th>Deadline</th>
                 <th>Status</th>
                 <th></th>
             </tr>
@@ -105,11 +109,12 @@
         <div class="job-detail-meta" id="job-detail-meta"></div>
         <div class="jd-input-toggle">
             <button class="jd-toggle-btn active" data-tab="jd">Job Description</button>
-            <button class="jd-toggle-btn" data-tab="candidates">Candidates</button>
+            <button class="jd-toggle-btn" data-tab="candidates">Applicants</button>
         </div>
         <div id="job-detail-jd" class="job-detail-tab-content"></div>
         <div id="job-detail-candidates" class="job-detail-tab-content" style="display:none;"></div>
     </div>
+</div>
 </div>
 {% endblock %}
 
@@ -148,6 +153,7 @@
                 <div class="form-group"><label>Salary Max (AUD)</label><input type="number" id="njm-sal-max"
                         placeholder="160000"></div>
             </div>
+            <div class="form-group"><label>Application Deadline <span style="color:var(--color-danger);">*</span></label><input type="date" id="njm-deadline" required></div>
             <div class="form-group"><label>Description</label><textarea id="njm-desc" rows="4"
                     placeholder="Describe the role, responsibilities…"></textarea></div>
             <div class="form-group"><label>Required Skills (comma separated)</label><input type="text" id="njm-skills"
@@ -188,7 +194,7 @@
                 <input type="url" id="jd-invite-link" value="" placeholder="https://calendly.com/your-link">
                 <small
                     style="display:block;margin-top:4px;color:var(--color-text-disabled);font-size:var(--font-size-xs);">
-                    Required. Candidates will use this link to choose an interview time.
+                    Required. Applicants will use this link to choose an interview time.
                 </small>
             </div>
             <div class="form-group">

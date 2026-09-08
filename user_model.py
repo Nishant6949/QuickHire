@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     company_size: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[str] = mapped_column(String, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     auto_screen: Mapped[bool] = mapped_column(Boolean, default=True)
     match_threshold: Mapped[int] = mapped_column(Integer, default=70)
     bias_detection: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -64,6 +65,7 @@ class Job(db.Model):
     status: Mapped[str] = mapped_column(String, default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    application_deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     user: Mapped["User"] = relationship(back_populates="jobs")
     candidates: Mapped[list["Candidate"]] = relationship(back_populates="job", cascade="all, delete-orphan")
 
@@ -97,3 +99,50 @@ class Candidate(db.Model):
     onboarding_generated: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     job: Mapped["Job"] = relationship(back_populates="candidates")
+
+class CandidateAccount(db.Model):
+    """Candidate-side account, separate from recruiter User accounts."""
+    __tablename__ = "candidate_accounts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    full_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(254), nullable=False, unique=True, index=True)
+    password: Mapped[str] = mapped_column(String, nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    location: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    headline: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    skills: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class SavedJob(db.Model):
+    __tablename__ = "saved_jobs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidate_account_id: Mapped[int] = mapped_column(Integer, ForeignKey("candidate_accounts.id"), nullable=False, index=True)
+    job_id: Mapped[int] = mapped_column(Integer, ForeignKey("jobs.id"), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class Notification(db.Model):
+    """In-app notification for either a recruiter or candidate account."""
+    __tablename__ = "notifications"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("user.id"), nullable=True, index=True)
+    candidate_account_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("candidate_accounts.id"), nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    message: Mapped[str] = mapped_column(String(500), nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False, default="info")
+    link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class LoginOTP(db.Model):
+    """Short-lived hashed OTP for email two-factor authentication."""
+    __tablename__ = "login_otps"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    account_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    account_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    code_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))

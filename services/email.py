@@ -1,188 +1,49 @@
-import logging
-import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from html import escape
 
-from flask import current_app
+from services.messaging import send_email
 
-logger = logging.getLogger(__name__)
+
+def _shell(title, greeting, body):
+    return f"""<!doctype html><html><body style=\"margin:0;background:#f4f7f5;font-family:Arial,sans-serif\"><table width=\"100%\"><tr><td align=\"center\" style=\"padding:32px 16px\"><table width=\"560\" style=\"max-width:560px;background:#fff;border:1px solid #e3e9e5;border-radius:16px;padding:32px\"><tr><td style=\"font-size:24px;font-weight:800;color:#15803d\">QuickHire</td></tr><tr><td><h2>{title}</h2></td></tr><tr><td style=\"color:#56635b;line-height:1.65\">{greeting}<br><br>{body}</td></tr><tr><td style=\"padding-top:24px;color:#8a938d;font-size:12px\">Sent securely via QuickHire</td></tr></table></td></tr></table></body></html>"""
 
 
 def send_invite_email(to_email, candidate_name, job_title, interview_dt, duration_min, custom_message, company_name=None, scheduling_link=None, reply_to=None):
-    gmail_addr = current_app.config.get("GMAIL_ADDRESS")
-    gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
-    if not gmail_addr or not gmail_pass:
-        if os.getenv("EMAIL_MODE", "console").lower() == "console":
-            logger.info("EMAIL PREVIEW invite -> %s | job=%s | scheduling=%s", to_email, job_title, scheduling_link)
-            return True
-        logger.error("Gmail credentials not configured — cannot send invite email")
-        return False
-
-    time_str = interview_dt.strftime("%B %d, %Y at %I:%M %p") if interview_dt else None
-
-    scheduling_section = ""
+    when = interview_dt.strftime("%B %d, %Y at %I:%M %p") if interview_dt else None
+    company = company_name or "the hiring team"
+    body = f"You have been selected for an interview with <strong>{company}</strong> for <strong>{job_title or 'the position'}</strong>."
     if scheduling_link:
-        scheduling_section = (
-            '<tr><td style="padding:12px 0;color:#A1A1AA;font-size:14px;line-height:1.6;">'
-            "Please use the link below to pick an interview time that works best for you."
-            "</td></tr>"
-            '<tr><td style="padding:8px 0;">'
-            '<a href="' + scheduling_link + '" style="display:inline-block;padding:10px 24px;'
-            'background:#22C55E;color:#070809;border-radius:6px;text-decoration:none;font-weight:600;">'
-            'Choose a Time</a></td></tr>'
-        )
-
-    custom_section = ""
+        body += f"<br><br><a href=\"{scheduling_link}\" style=\"display:inline-block;padding:11px 20px;background:#16a34a;color:white;text-decoration:none;border-radius:8px;font-weight:700\">Choose an interview time</a>"
+    elif when:
+        body += f"<br><br><strong>Date & time:</strong> {when}<br><strong>Duration:</strong> {duration_min} minutes"
     if custom_message:
-        custom_section = (
-            '<tr><td style="padding:12px 0;color:#A1A1AA;font-size:14px;line-height:1.6;">'
-            + custom_message.replace("\n", "<br>") + '</td></tr>'
-        )
-
-    html = (
-        '<table style="max-width:520px;margin:0 auto;font-family:Inter,sans-serif;background:#0F1114;'
-        'border:1px solid rgba(34,197,94,0.15);border-radius:10px;padding:32px;color:#FAFAFA;">'
-        '<tr><td style="font-size:20px;font-weight:700;color:#22C55E;padding-bottom:16px;">QuickHire</td></tr>'
-        '<tr><td style="height:2px;background:rgba(34,197,94,0.15);"></td></tr>'
-        '<tr><td style="padding:20px 0 8px;font-size:18px;font-weight:600;">Interview Invitation</td></tr>'
-        '<tr><td style="color:#A1A1AA;font-size:14px;padding-bottom:16px;">Hi ' + (candidate_name or "there") + ',</td></tr>'
-        '<tr><td style="color:#A1A1AA;font-size:14px;line-height:1.6;padding-bottom:16px;">'
-        'You have been selected for an interview' + (' from <strong style="color:#FAFAFA;">' + (company_name or "") + '</strong>' if company_name else '') + ' for the position of <strong style="color:#FAFAFA;">' + (job_title or "a position") + '</strong>.</td></tr>'
-    )
-
-    if time_str and not scheduling_link:
-        html += (
-            '<tr><td style="padding:8px 0;color:#A1A1AA;font-size:14px;">'
-            '<strong style="color:#FAFAFA;">Date & Time:</strong> ' + time_str + '</td></tr>'
-            '<tr><td style="padding:8px 0 16px;color:#A1A1AA;font-size:14px;">'
-            '<strong style="color:#FAFAFA;">Duration:</strong> ' + str(duration_min) + ' minutes</td></tr>'
-        )
-
-    html += scheduling_section + custom_section + (
-        '<tr><td style="padding:20px 0 0;color:#71717A;font-size:12px;">Sent via QuickHire</td></tr>'
-        '</table>'
-    )
-
-    msg = MIMEMultipart("alternative")
-    msg["From"] = f"{company_name} via QuickHire <{gmail_addr}>" if company_name else f"QuickHire <{gmail_addr}>"
-    msg["To"] = to_email
-    if reply_to:
-        msg["Reply-To"] = reply_to
-    subject_prefix = f"Interview Invitation from {company_name}" if company_name else "Interview Invitation"
-    msg["Subject"] = f"{subject_prefix} - {job_title or 'Position'}"
-    msg.attach(MIMEText(html, "html"))
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(gmail_addr, gmail_pass)
-            server.send_message(msg)
-        return True
-    except Exception as e:
-        logger.error("Failed to send invite email to %s: %s", to_email, e)
-        return False
+        body += "<br><br>" + custom_message.replace("\n", "<br>")
+    return send_email(to_email, f"Interview Invitation - {job_title or 'Position'}", _shell("Interview Invitation", f"Hi {candidate_name or 'there'},", body), reply_to)
 
 
 def send_decision_email(to_email, candidate_name, job_title, decision, company_name=None, reply_to=None):
-    gmail_addr = current_app.config.get("GMAIL_ADDRESS")
-    gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
-    if not gmail_addr or not gmail_pass:
-        if os.getenv("EMAIL_MODE", "console").lower() == "console":
-            logger.info("EMAIL PREVIEW decision=%s -> %s | job=%s", decision, to_email, job_title)
-            return True
-        logger.error("Gmail credentials not configured — cannot send decision email")
-        return False
-
     if decision == "hire":
-        subject = f"Congratulations! - {job_title or 'Position'}"
-        heading = "Congratulations!"
-        body_text = (
-            "We are thrilled to inform you that you have been selected for the role of "
-            '<strong style="color:#FAFAFA;">' + (job_title or "the position") + "</strong>"
-            + (" at <strong style=\"color:#FAFAFA;\">" + company_name + "</strong>" if company_name else "")
-            + ". Our team will be in touch shortly with more details about next steps and onboarding."
-        )
+        title = "Congratulations!"
+        subject = f"Congratulations - {job_title or 'Position'}"
+        body = f"We are pleased to let you know that you have been selected for <strong>{job_title or 'the position'}</strong>" + (f" at <strong>{company_name}</strong>" if company_name else "") + ". The hiring team will contact you with the next steps."
     else:
+        title = "Application Update"
         subject = f"Application Update - {job_title or 'Position'}"
-        heading = "Application Update"
-        body_text = (
-            "Thank you for taking the time to interview for the position of "
-            '<strong style="color:#FAFAFA;">' + (job_title or "the position") + "</strong>"
-            + (" at <strong style=\"color:#FAFAFA;\">" + company_name + "</strong>" if company_name else "")
-            + ". After careful consideration, the team has decided to move forward with another candidate. "
-            "We truly appreciate your time and interest, and we wish you all the best in your career."
-        )
-
-    html = (
-        '<table style="max-width:520px;margin:0 auto;font-family:Inter,sans-serif;background:#0F1114;'
-        'border:1px solid rgba(34,197,94,0.15);border-radius:10px;padding:32px;color:#FAFAFA;">'
-        '<tr><td style="font-size:20px;font-weight:700;color:#22C55E;padding-bottom:16px;">QuickHire</td></tr>'
-        '<tr><td style="height:2px;background:rgba(34,197,94,0.15);"></td></tr>'
-        '<tr><td style="padding:20px 0 8px;font-size:18px;font-weight:600;">' + heading + '</td></tr>'
-        '<tr><td style="color:#A1A1AA;font-size:14px;padding-bottom:16px;">Hi ' + (candidate_name or "there") + ',</td></tr>'
-        '<tr><td style="color:#A1A1AA;font-size:14px;line-height:1.6;padding-bottom:16px;">'
-        + body_text + '</td></tr>'
-        '<tr><td style="padding:20px 0 0;color:#71717A;font-size:12px;">Sent via QuickHire</td></tr>'
-        '</table>'
-    )
-
-    msg = MIMEMultipart("alternative")
-    msg["From"] = f"{company_name} via QuickHire <{gmail_addr}>" if company_name else f"QuickHire <{gmail_addr}>"
-    msg["To"] = to_email
-    if reply_to:
-        msg["Reply-To"] = reply_to
-    msg["Subject"] = subject
-    msg.attach(MIMEText(html, "html"))
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(gmail_addr, gmail_pass)
-            server.send_message(msg)
-        logger.info("Decision email (%s) sent to %s", decision, to_email)
-        return True
-    except Exception as e:
-        logger.error("Failed to send decision email to %s: %s", to_email, e)
-        return False
+        body = f"Thank you for your interest in <strong>{job_title or 'the position'}</strong>. After careful consideration, the hiring team has decided to progress with another applicant. We appreciate the time you invested in the process."
+    return send_email(to_email, subject, _shell(title, f"Hi {candidate_name or 'there'},", body), reply_to)
 
 
 def send_custom_email(to_email, candidate_name, subject, body_text, company_name=None, reply_to=None):
-    gmail_addr = current_app.config.get("GMAIL_ADDRESS")
-    gmail_pass = current_app.config.get("GMAIL_APP_PASSWORD")
-    if not gmail_addr or not gmail_pass:
-        if os.getenv("EMAIL_MODE", "console").lower() == "console":
-            logger.info("EMAIL PREVIEW custom -> %s | subject=%s", to_email, subject)
-            return True
-        logger.error("Gmail credentials not configured — cannot send custom email")
-        return False
+    """Send a plain-text employer message inside the QuickHire email template.
 
-    html = (
-        '<table style="max-width:520px;margin:0 auto;font-family:Inter,sans-serif;background:#0F1114;'
-        'border:1px solid rgba(34,197,94,0.15);border-radius:10px;padding:32px;color:#FAFAFA;">'
-        '<tr><td style="font-size:20px;font-weight:700;color:#22C55E;padding-bottom:16px;">'
-        + (company_name or "QuickHire") + '</td></tr>'
-        '<tr><td style="height:2px;background:rgba(34,197,94,0.15);"></td></tr>'
-        '<tr><td style="padding:20px 0 8px;font-size:18px;font-weight:600;">' + subject + '</td></tr>'
-        '<tr><td style="color:#A1A1AA;font-size:14px;padding-bottom:16px;">Hi ' + (candidate_name or "there") + ',</td></tr>'
-        '<tr><td style="color:#A1A1AA;font-size:14px;line-height:1.6;padding-bottom:16px;">'
-        + body_text.replace("\n", "<br>") + '</td></tr>'
-        '<tr><td style="padding:20px 0 0;color:#71717A;font-size:12px;">Sent via QuickHire</td></tr>'
-        '</table>'
+    Employer-written text is escaped before converting line breaks to HTML so
+    a message cannot inject arbitrary HTML into the outgoing email.
+    """
+    safe_subject = escape(subject)
+    safe_name = escape(candidate_name or "there")
+    safe_body = escape(body_text).replace("\n", "<br>")
+    return send_email(
+        to_email,
+        subject,
+        _shell(safe_subject, f"Hi {safe_name},", safe_body),
+        reply_to,
     )
-
-    msg = MIMEMultipart("alternative")
-    msg["From"] = f"{company_name} via QuickHire <{gmail_addr}>" if company_name else f"QuickHire <{gmail_addr}>"
-    msg["To"] = to_email
-    if reply_to:
-        msg["Reply-To"] = reply_to
-    msg["Subject"] = subject
-    msg.attach(MIMEText(html, "html"))
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(gmail_addr, gmail_pass)
-            server.send_message(msg)
-        logger.info("Custom email sent to %s", to_email)
-        return True
-    except Exception as e:
-        logger.error("Failed to send custom email to %s: %s", to_email, e)
-        return False

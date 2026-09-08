@@ -46,6 +46,7 @@
                 '<td>' + escapeHtml(j.location || '\u2014') + '</td>' +
                 '<td>' + j.candidate_count + '</td>' +
                 '<td>' + j.created_at + '</td>' +
+                '<td><strong>' + (j.application_deadline ? escapeHtml(j.application_deadline) : '\u2014') + '</strong></td>' +
                 '<td>' + (j.status_html || '') + '</td>' +
                 '<td style="text-align:right;">' +
                 '<button class="btn-outline-sm job-row-delete-btn" data-job-id="' + j.id + '" data-title="' + escapeHtml(j.title) + '" type="button" title="Delete job" style="color:var(--color-danger,#ef4444);border-color:var(--color-danger,#ef4444);padding:4px 8px;">' +
@@ -154,6 +155,7 @@
             else sal = 'Up to $' + job.salary_max.toLocaleString();
             metaPills.push('<span class="pill-tag">' + sal + '</span>');
         }
+        if (job.application_deadline) metaPills.push('<span class="pill-tag">Deadline: ' + escapeHtml(job.application_deadline) + '</span>');
         if (job.required_skills) metaPills.push('<span class="pill-tag">' + escapeHtml(job.required_skills) + '</span>');
         detailMeta.innerHTML = metaPills.join('');
 
@@ -540,6 +542,11 @@
             return;
         }
 
+        var deadline = document.getElementById('njm-deadline').value;
+        if (!deadline) {
+            if (window.toast) window.toast('Please select an application deadline', 'error');
+            return;
+        }
         var submitBtn = document.getElementById('njm-submit');
         submitBtn.disabled = true;
 
@@ -551,6 +558,7 @@
         form.append('salary_max', document.getElementById('njm-sal-max').value);
         form.append('description', document.getElementById('njm-desc').value.trim());
         form.append('skills', document.getElementById('njm-skills').value.trim());
+        form.append('application_deadline', deadline);
 
         fetch('/dashboard/create-job', { method: 'POST', body: form })
             .then(function (res) { return res.json(); })
@@ -580,6 +588,7 @@
         document.getElementById('njm-sal-max').value = '';
         document.getElementById('njm-desc').value = '';
         document.getElementById('njm-skills').value = '';
+        document.getElementById('njm-deadline').value = '';
     }
 
     function deleteJob(jobId, title, btn) {

@@ -198,6 +198,7 @@ def build_jobs_list(user_id, q=None, dept=None, status=None, days=None):
             "candidate_count": candidate_counts.get(j.id, 0), "status": j.status,
             "status_html": render_status_badge(j.status),
             "created_at": j.created_at.strftime("%Y-%m-%d"),
+            "application_deadline": j.application_deadline.strftime("%Y-%m-%d") if j.application_deadline else "",
         })
     return jobs_data
 

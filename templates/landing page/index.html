@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#070809">
-    <meta name="description" content="QuickHire - AI-native hiring. Cuts hiring time by 80%. Bias-free. Instant. Precise.">
+    <meta name="description" content="QuickHire - AI-assisted recruitment, applicant ranking and hiring workflow management.">
     <title>QuickHire - Scale Your Team, Not Your Workload</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,11 +19,19 @@
     <section class="hero">
         <div class="container hero-container">
             <div class="hero-content">
-                <h1 class="hero-headline">We help Businesses scale, Quicker.</h1>
+                <h1 class="hero-headline">Hire with clarity. Move faster.</h1>
                 <p class="hero-subheadline">
-                    <span class="hero-subheadline-main">Cuts hiring time by 80%.</span>
-                    <span class="hero-subheadline-support">Bias-free. Instant. Precise.</span>
+                    <span class="hero-subheadline-main">AI-assisted screening and applicant ranking.</span>
+                    <span class="hero-subheadline-support">Human review stays at the centre of every hiring decision.</span>
                 </p>
+                <div class="hero-actions" aria-label="QuickHire account options">
+                    <a href="{{ url_for('careers.jobs') }}" class="hero-job-button">
+                        <span class="hero-job-icon">⌕</span>
+                        <span><strong>Find Jobs</strong><small>Browse vacancies & apply</small></span>
+                    </a>
+                    <a href="{{ url_for('candidate_auth.register') }}" class="hero-candidate-button">Create Applicant Account</a>
+                </div>
+                <p class="hero-recruiter-link">Hiring? <a href="{{ url_for('auth.login') }}">Employer sign in</a> or <a href="{{ url_for('auth.register') }}">create employer account</a>.</p>
             </div>
             <div class="hero-proof">
                 <div class="dashboard-mockup">
@@ -54,107 +62,13 @@
                 </div>
             </div>
         </div>
-        <!--
-        <hr class="section-divider" aria-hidden="true">
-        <div class="hero-social-proof-center">
-            <p class="social-proof-header">Integrations</p>
-            <div class="integrations-scroll-wrapper">
-                <div class="integrations-scroll-track" aria-hidden="true">
-                    <div class="integrations-set">
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
-                        </span>
-                    </div>
-                    <div class="integrations-set" aria-hidden="true">
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
-                        </span>
-                    </div>
-                    <div class="integrations-set" aria-hidden="true">
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
-                        </span>
-                    </div>
-                    <div class="integrations-set" aria-hidden="true">
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
-                        </span>
-                    </div>
-                    <div class="integrations-set" aria-hidden="true">
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
-                        </span>
-                    </div>
-                    <div class="integrations-set" aria-hidden="true">
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/seek/icon/SEK.AX-d232c935.png" alt="Seek" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Jora/logo/image.svg" alt="Jora" width="80" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/Indeed/Logo/Indeed_Logo_0.svg" alt="Indeed" width="100" height="28" loading="lazy">
-                        </span>
-                        <span class="company-logo company-logo-integration">
-                            <img src="../../static/assets/external-platform-logos/LinkedIn/icon/InBug-White.png" alt="LinkedIn" width="28" height="28" loading="lazy">
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <hr class="section-divider" aria-hidden="true">
     </section>
--->
+
     <section id="features" class="features-section">
         <div class="features-wrapper">
             <div class="features-content">
-                <h2 class="features-headline">AI-native hiring, built to scale.</h2>
-                <p class="features-description">Smarter resume screening. Fairer hiring. Real-time insights. All powered by AI. All in one place.</p>
+                <h2 class="features-headline">AI-assisted hiring, built to scale.</h2>
+                <p class="features-description">Smarter resume screening, structured ranking and real-time recruitment insights in one workspace.</p>
             </div>
             <div class="features-carousel-wrap">
                 <div class="features-carousel">
@@ -171,8 +85,8 @@
                         </div>
                         <div class="feature-card">
                             <i data-feather="user-x" class="feature-card-icon"></i>
-                            <h3 class="feature-card-title">Bias-Free Evaluation</h3>
-                            <p class="feature-card-subtitle">Hire on merit, not background</p>
+                            <h3 class="feature-card-title">Structured Evaluation</h3>
+                            <p class="feature-card-subtitle">Consistent criteria to support human review</p>
                         </div>
                         <div class="feature-card">
                             <i data-feather="zap" class="feature-card-icon"></i>

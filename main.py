@@ -18,6 +18,10 @@ from routes.dashboard import dashboard_bp
 from routes.api.jobs import jobs_api_bp
 from routes.api.candidates import candidates_api_bp
 from routes.password_reset import password_reset_bp
+from routes.candidate_auth import candidate_auth_bp
+from routes.careers import careers_bp
+from routes.notifications import notifications_bp
+from routes.two_factor import two_factor_bp
 
 logging.basicConfig(
     level=getattr(logging, os.getenv('LOG_LEVEL', 'INFO').upper(), logging.INFO),
@@ -27,10 +31,12 @@ logger = logging.getLogger(__name__)
 
 
 def _truthy(value):
+    """Convert common environment-variable values such as yes/true/1 to True."""
     return str(value or '').strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
 def _is_production():
+    """Return True when QuickHire is running on a production hosting platform."""
     return (
         os.getenv('FLASK_ENV') == 'production'
         or _truthy(os.getenv('RENDER'))
@@ -69,8 +75,8 @@ app.config.update(
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,
     ANTHROPIC_API_KEY=os.getenv('ANTHROPIC_API_KEY'),
-    GMAIL_ADDRESS=os.getenv('GMAIL_ADDRESS'),
-    GMAIL_APP_PASSWORD=os.getenv('GMAIL_APP_PASSWORD'),
+    SENDGRID_API_KEY=os.getenv('SENDGRID_API_KEY'),
+    SENDGRID_FROM_EMAIL=os.getenv('SENDGRID_FROM_EMAIL'),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_COOKIE_SECURE=PRODUCTION,
@@ -96,6 +102,7 @@ if database_url.startswith('postgresql'):
     with app.app_context():
         @event.listens_for(db.engine, 'connect')
         def _on_connect(dbapi_conn, connection_record):
+            """Apply a safe timeout to new PostgreSQL connections."""
             try:
                 old_autocommit = getattr(dbapi_conn, 'autocommit', False)
                 dbapi_conn.autocommit = True
@@ -123,6 +130,7 @@ ERROR_PAGES = {
 
 
 def render_error(error):
+    """Show one friendly error page for common HTTP errors."""
     code = getattr(error, 'code', 500)
     title, description, icon = ERROR_PAGES.get(code, ERROR_PAGES[500])
     return render_template(
@@ -140,6 +148,10 @@ app.register_blueprint(dashboard_bp)
 app.register_blueprint(jobs_api_bp)
 app.register_blueprint(candidates_api_bp)
 app.register_blueprint(password_reset_bp)
+app.register_blueprint(candidate_auth_bp)
+app.register_blueprint(careers_bp)
+app.register_blueprint(notifications_bp)
+app.register_blueprint(two_factor_bp)
 
 
 @app.get('/health')
@@ -158,12 +170,14 @@ def health():
         'status': 'ok' if status_code == 200 else 'degraded',
         'database': database,
         'ai_configured': bool(app.config.get('ANTHROPIC_API_KEY')),
-        'email_configured': bool(app.config.get('GMAIL_ADDRESS') and app.config.get('GMAIL_APP_PASSWORD')),
+        'email_configured': bool(os.getenv('SENDGRID_API_KEY') and os.getenv('SENDGRID_FROM_EMAIL')),
+        'two_factor_method': 'email_otp',
     }), status_code
 
 
 @app.after_request
 def set_security_headers(response):
+    """Add basic browser security headers to every response."""
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'

@@ -1,9 +1,13 @@
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user, logout_user
-from sqlalchemy.orm import selectinload
-
-from user_model import db, User, Job, Candidate, TeamMember
+from user_model import db, User, Job, TeamMember
 from services.storage import delete_file
+from services.recruitment import (
+    dashboard_summary,
+    employer_applicants,
+    employer_jobs,
+    interview_applicants,
+)
 from utils.formatting import serialize_candidate, job_stats_for_user, build_jobs_list
 
 dashboard_bp = Blueprint('dashboard_bp', __name__, url_prefix='/dashboard')
@@ -12,19 +16,30 @@ dashboard_bp = Blueprint('dashboard_bp', __name__, url_prefix='/dashboard')
 @dashboard_bp.route("/")
 @login_required
 def dashboard():
-    draft_job = db.session.execute(
-        db.select(Job)
-        .where(Job.user_id == current_user.id)
-        .where(Job.status.in_(("draft", "ready", "processing")))
-        .order_by(Job.updated_at.desc())
-    ).scalars().first()
+    """Show a concise overview of the employer's recruitment activity."""
+    jobs = employer_jobs(current_user.id)
+    applicants = employer_applicants(current_user.id)
+    summary = dashboard_summary(jobs, applicants)
 
     return render_template(
         "dashboard/dashboard.html",
         active_page="dashboard",
-        draft_job=draft_job
+        active_jobs=summary["active_jobs"],
+        total_applicants=summary["total_applicants"],
+        shortlisted=summary["shortlisted"],
+        interviews=summary["interviews"],
+        hired=summary["hired"],
+        avg_score=summary["avg_score"],
+        upcoming_deadlines=summary["upcoming_deadlines"],
+        recent_applicants=summary["top_applicants"],
     )
 
+
+@dashboard_bp.route("/screening")
+@login_required
+def screening():
+    draft_job = db.session.execute(db.select(Job).where(Job.user_id == current_user.id).where(Job.status.in_(("draft", "ready", "processing"))).order_by(Job.updated_at.desc())).scalars().first()
+    return render_template('dashboard/screening.html', active_page='screening', draft_job=draft_job)
 
 @dashboard_bp.route("/jobs")
 @login_required
@@ -44,24 +59,19 @@ def jobs():
 @dashboard_bp.route("/candidates")
 @login_required
 def candidates():
-    all_candidates = db.session.execute(
-        db.select(Candidate)
-        .options(selectinload(Candidate.job))
-        .join(Job)
-        .where(Job.user_id == current_user.id)
-        .where(Candidate.match_score.isnot(None))
-        .order_by(Candidate.match_score.desc())
-    ).scalars().all()
+    """Show applicants ranked by match score, with optional status/search filters."""
+    all_candidates = employer_applicants(current_user.id)
 
     candidates_data = []
     for c in all_candidates:
         data = serialize_candidate(c)
         data["job_id"] = c.job_id
         data["job_title"] = c.job.title if c.job else "Unknown"
+        data["applied_at"] = c.created_at.strftime("%d %b %Y")
         candidates_data.append(data)
 
     total_count = len(candidates_data)
-    invited_count = sum(1 for c in candidates_data if c["status"] in ("invited", "interview_done", "shortlisted"))
+    shortlisted_count = sum(1 for c in candidates_data if c["status"] in ("shortlisted", "invited", "interview_done"))
     pending_count = sum(1 for c in candidates_data if c["status"] in ("pending", "scored"))
     hired_count = sum(1 for c in candidates_data if c["status"] == "final_hired")
 
@@ -76,10 +86,27 @@ def candidates():
         active_page="candidates",
         candidates_data=candidates_data,
         total_count=total_count,
-        invited_count=invited_count,
+        shortlisted_count=shortlisted_count,
         pending_count=pending_count,
         hired_count=hired_count,
         job_filter_options=job_filter_options,
+    )
+
+
+@dashboard_bp.route("/interviews")
+@login_required
+def interviews():
+    """Show a dedicated interview workspace instead of reusing the applicant table."""
+    interview_candidates = interview_applicants(current_user.id)
+
+    upcoming = [c for c in interview_candidates if c.status == "invited"]
+    completed = [c for c in interview_candidates if c.status == "interview_done"]
+    return render_template(
+        "dashboard/interviews.html",
+        active_page="interviews",
+        upcoming=upcoming,
+        completed=completed,
+        total_interviews=len(interview_candidates),
     )
 
 

@@ -9,15 +9,17 @@
     <option value="90d">Last 90 Days</option>
 </select>
 <button class="btn-outline-sm" id="export-btn"><i data-feather="download"></i> Export</button>
-<button class="icon-btn"><i data-feather="bell"></i></button>
+
 {% endblock %}
 
 {% block page_content %}
+<div class="analytics-workspace">
+<div class="page-title-row"><div><span class="page-kicker">HIRING INTELLIGENCE</span><h1>Analytics</h1><p>Understand applicant flow, match quality and hiring outcomes from your real QuickHire data.</p></div></div>
 <!-- KPI Stats -->
 <div class="stats-grid">
     <div class="stat-card">
         <span class="stat-icon"><i data-feather="users"></i></span>
-        <div class="stat-label">Total Candidates</div>
+        <div class="stat-label">Total Applicants</div>
         <div class="stat-value" id="kpi-total">—</div>
         <div class="stat-change" id="kpi-total-sub">in selected period</div>
     </div>
@@ -44,16 +46,16 @@
 <div class="two-col">
     <!-- Applications over time (bar chart) -->
     <div class="card-panel">
-        <h3>Candidates Over Time</h3>
+        <h3>Applicants Over Time</h3>
         <div id="app-chart" class="analytics-bar-chart-wrap">
             <div class="analytics-empty" id="app-chart-empty" style="display:none;">No candidate data in this period.
             </div>
         </div>
     </div>
 
-    <!-- Candidates by department (horizontal bars) -->
+    <!-- Applicants by department (horizontal bars) -->
     <div class="card-panel">
-        <h3>Candidates by Department</h3>
+        <h3>Applicants by Department</h3>
         <div id="dept-breakdown">
             <div class="analytics-empty" id="dept-empty" style="display:none;">No department data available.</div>
         </div>
@@ -87,7 +89,7 @@
     <table>
         <thead>
             <tr>
-                <th>Candidate</th>
+                <th>Applicant</th>
                 <th>Role</th>
                 <th>Department</th>
                 <th>Match Score</th>
@@ -104,4 +106,5 @@
 </div>
 
 <script src="/static/js/analytics.js"></script>
+</div>
 {% endblock %}

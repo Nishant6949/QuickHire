@@ -77,3 +77,17 @@ After deployment, check `/health` to verify database connectivity and optional s
 ## Important security note
 
 Never commit `.env`, database passwords, API keys or Gmail app passwords. If a credential has been exposed, rotate it before deployment.
+
+## Candidate job portal
+
+QuickHire now includes a public candidate-facing careers flow:
+
+- `/careers` lists active vacancies across QuickHire employers.
+- Candidates can search by role/skill/company and location.
+- `/careers/job/<id>` displays the role and a public application form.
+- Candidates submit their name, email and a PDF resume.
+- The application is stored as a Candidate linked to the selected Job and appears in the recruiter's Candidate Pool.
+- If the recruiter has Auto-screen enabled, the application is screened automatically using Anthropic when configured or the local fallback scorer otherwise. The candidate never sees the internal match score.
+- Duplicate applications using the same email for the same job are rejected.
+
+Draft and closed jobs are excluded from the public careers page.

@@ -12,6 +12,7 @@ from services.ai import score_candidate
 from services.email import send_invite_email, send_decision_email, send_custom_email
 from services.pdf import generate_candidate_report, generate_onboarding_doc
 from services.storage import upload_file, delete_file
+from services.notifications import notify_candidate, notify_recruiter
 from utils.formatting import (
     extract_pdf_text, serialize_candidate,
     compute_analytics_data, build_analytics_csv,
@@ -293,6 +294,12 @@ def update_candidate_status(candidate_id):
         return jsonify({"success": False, "error": "Invalid candidate status"}), 400
 
     candidate.status = new_status
+    status_label = new_status.replace("_", " ").title()
+    notify_candidate(
+        candidate.candidate_email, "Application status updated",
+        f"Your application for {candidate.job.title or 'the position'} is now {status_label}.",
+        category="status"
+    )
     db.session.commit()
     return jsonify({"success": True, "candidate": serialize_candidate(candidate)})
 
@@ -387,6 +394,11 @@ def send_invites():
     email_results = []
     for c in owned:
         c.status = "invited"
+        notify_candidate(
+            c.candidate_email, "Interview invitation",
+            f"You have been invited to the next stage for {job.title or 'your application'}.",
+            category="interview"
+        )
 
         email_sent = False
         if c.candidate_email:
@@ -433,6 +445,13 @@ def final_decision():
     if notes:
         candidate.final_notes = notes
 
+    decision_label = "Hired" if decision == "hire" else "Application update"
+    decision_message = (
+        f"Congratulations — you have been selected for {candidate.job.title or 'the position'}."
+        if decision == "hire" else
+        f"A final decision has been recorded for your {candidate.job.title or 'job'} application."
+    )
+    notify_candidate(candidate.candidate_email, decision_label, decision_message, category="decision")
     db.session.commit()
 
     email_sent = False
@@ -454,29 +473,78 @@ def final_decision():
 @candidates_api_bp.route("/send-custom-email", methods=["POST"])
 @login_required
 def send_custom_email_route():
-    data = request.get_json()
+    """Send an employer-written email to one applicant.
+
+    The employer can start from a UI template and edit the message before
+    sending. For interview invitations, the applicant is only moved to the
+    invited stage after SendGrid accepts the email.
+    """
+    data = request.get_json(silent=True) or {}
     candidate_id = data.get("candidate_id")
-    subject = data.get("subject", "").strip()
-    body = data.get("body", "").strip()
+    subject = str(data.get("subject", "")).strip()
+    body = str(data.get("body", "")).strip()
+    message_type = str(data.get("message_type", "custom")).strip()
+    mark_status = str(data.get("mark_status", "")).strip()
 
     if not candidate_id or not subject or not body:
-        return jsonify({"success": False, "error": "Missing fields"}), 400
+        return jsonify({"success": False, "error": "Subject and message are required"}), 400
+    if len(subject) > 200 or len(body) > 6000:
+        return jsonify({"success": False, "error": "The email is too long"}), 400
 
     candidate = db.session.get(Candidate, candidate_id)
     if not candidate or candidate.job.user_id != current_user.id:
         return jsonify({"success": False, "error": "Candidate not found"}), 404
-
     if not candidate.candidate_email:
-        return jsonify({"success": False, "error": "No email on file"}), 400
+        return jsonify({"success": False, "error": "This applicant has no email address"}), 400
 
-    company_name = current_user.company_name if current_user.company_name else None
+    company_name = current_user.company_name or None
     email_sent = send_custom_email(
-        candidate.candidate_email, candidate.candidate_name,
-        subject, body, company_name=company_name,
-        reply_to=current_user.work_email
+        candidate.candidate_email,
+        candidate.candidate_name,
+        subject,
+        body,
+        company_name=company_name,
+        reply_to=current_user.work_email,
     )
 
-    return jsonify({"success": True, "email_sent": email_sent})
+    if not email_sent:
+        return jsonify({
+            "success": True,
+            "email_sent": False,
+            "candidate": serialize_candidate(candidate),
+        })
+
+    allowed_after_send = {
+        "shortlisted": "shortlisted",
+        "interview_invitation": "invited",
+        "hired": "final_hired",
+        "rejection": "final_rejected",
+    }
+    expected_status = allowed_after_send.get(message_type)
+    if mark_status and expected_status == mark_status:
+        candidate.status = mark_status
+        db.session.commit()
+
+    notification_title = "Message from employer"
+    if message_type == "interview_invitation":
+        notification_title = "Interview invitation"
+    elif message_type == "shortlisted":
+        notification_title = "Application shortlisted"
+    elif message_type in ("hired", "rejection"):
+        notification_title = "Application decision"
+
+    notify_candidate(
+        candidate.candidate_email,
+        notification_title,
+        f"You have a new update for {candidate.job.title or 'your application'}.",
+        category="interview" if message_type == "interview_invitation" else "status",
+    )
+
+    return jsonify({
+        "success": True,
+        "email_sent": True,
+        "candidate": serialize_candidate(candidate),
+    })
 
 
 @candidates_api_bp.route("/generate-onboarding/<int:candidate_id>")
